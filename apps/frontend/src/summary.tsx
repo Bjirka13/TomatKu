@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './index.css';
-import { getPeriodStats } from './utils/dummyData';
+import { getPeriodStatsReal } from './utils/api';
 
 interface SummaryProps {
   onNavigate?: (tab: 'home' | 'camera' | 'summary' | 'history') => void;
@@ -55,15 +55,29 @@ const earlyBlightRecommendations: RecommendationItem[] = [
 export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('hari');
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
+  const [currentStats, setCurrentStats] = useState({
+    totalScan: 0,
+    healthyPercent: 0,
+    earlyBlightPercent: 0,
+    needleAngle: 0,
+    label: ''
+  });
 
-  const currentStats = getPeriodStats(selectedPeriod);
+  useEffect(() => {
+    let isMounted = true;
+    getPeriodStatsReal(selectedPeriod).then(stats => {
+      if (isMounted) {
+        setCurrentStats(stats);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [selectedPeriod]);
 
   // Donut Chart calculations (radius = 72, circumference = 2 * pi * 72 = 452.39)
   const radius = 72;
   const circumference = 2 * Math.PI * radius; // ~452.39
   const healthyStroke = (currentStats.healthyPercent / 100) * circumference;
   const earlyBlightStroke = (currentStats.earlyBlightPercent / 100) * circumference;
-  const unknownStroke = (currentStats.unknownPercent / 100) * circumference;
 
   const handleTabClick = (tab: 'home' | 'camera' | 'summary' | 'history') => {
     if (onNavigate) {
@@ -335,10 +349,6 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                 <span className="w-2.5 h-2.5 rounded-full bg-[#782c2c]" />
                 <span>Early Blight</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#6a9ab0]" />
-                <span>Unknown</span>
-              </div>
             </div>
 
             {/* Donut Chart with Surrounding Labels */}
@@ -372,19 +382,6 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                     strokeDashoffset={`-${healthyStroke}`}
                     className="transition-all duration-700 ease-out"
                   />
-
-                  {/* Segment 3: Unknown (10%) - Slate Blue */}
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke="#6a9ab0"
-                    strokeWidth="32"
-                    strokeDasharray={`${unknownStroke} ${circumference}`}
-                    strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
-                    className="transition-all duration-700 ease-out"
-                  />
                 </g>
 
                 {/* Donut Center Label */}
@@ -407,15 +404,6 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
               </svg>
 
               {/* Floating Labels outside Donut */}
-              {/* Label Unknown (Top-Left) */}
-              <div className="absolute top-2.5 left-15 text-center pointer-events-none">
-                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
-                  Unknown
-                </span>
-                <span className="block text-[10px] font-medium text-[#4b5563]">
-                  {currentStats.unknownPercent}%
-                </span>
-              </div>
 
               {/* Label Early Blight (Left) */}
               <div className="absolute top-[48%] -translate-y-1/2 left-[-12%] text-center pointer-events-none">
