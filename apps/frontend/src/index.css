@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Poppins', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
+
+  --color-primary-orange: #eb8e2d;
+  --color-olive-card: #728543;
+  --color-olive-light: #adc278;
+  --color-olive-text: #edf2d8;
+  --color-nav-bg: #34363a;
+  --color-nav-active: #eb8e2d;
+  --color-nav-inactive: #e2e2e2;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  font-family: var(--font-body);
+  background-color: #f3ede2;
+  color: #2d3748;
+  overflow-x: hidden;
+}
+
+/* Custom text-stroke effect for TomatKU header */
+.text-stroke-title {
+  -webkit-text-stroke: 3.5px #ffffff;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 3px 6px rgba(235, 142, 45, 0.22));
+}
+
+/* Custom micro-animations */
+@keyframes logoEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulsePrompt {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 0.85;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.25;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-entrance {
+  animation: logoEntrance 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-prompt {
+  animation: pulsePrompt 2s infinite ease-in-out;
+}
+
+.animate-fade {
+  animation: fadeIn 0.25s ease-out forwards;
+}
