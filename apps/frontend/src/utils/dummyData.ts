@@ -5,7 +5,6 @@ export interface DailyRecord {
   totalScan: number;
   healthyPercent: number;
   earlyBlightPercent: number;
-  unknownPercent: number;
   needleAngle: number;
 }
 
@@ -62,9 +61,7 @@ export function getStatsForDate(dateInput: Date | string): DailyRecord {
   // Variation in total scans for a single day: 25 - 69 scans
   const totalScan = 25 + (seed % 45);
 
-  // Unknown percentage: 5% - 12%
-  const unknownPercent = 5 + (seed % 8);
-  const remaining = 100 - unknownPercent;
+  const remaining = 100;
 
   // Healthy percentage: 50% - 80% of remaining
   const healthyRatio = 0.52 + ((seed % 32) / 100);
@@ -85,7 +82,6 @@ export function getStatsForDate(dateInput: Date | string): DailyRecord {
     totalScan,
     healthyPercent,
     earlyBlightPercent,
-    unknownPercent,
     needleAngle,
   };
 }
@@ -100,7 +96,6 @@ export function getPeriodStats(
   totalScan: number;
   healthyPercent: number;
   earlyBlightPercent: number;
-  unknownPercent: number;
   needleAngle: number;
   label: string;
 } {
@@ -108,8 +103,7 @@ export function getPeriodStats(
     return {
       totalScan: 248,
       healthyPercent: 65,
-      earlyBlightPercent: 25,
-      unknownPercent: 10,
+      earlyBlightPercent: 35,
       needleAngle: 65,
       label: 'Minggu ini',
     };
@@ -119,8 +113,7 @@ export function getPeriodStats(
     return {
       totalScan: 890,
       healthyPercent: 55,
-      earlyBlightPercent: 35,
-      unknownPercent: 10,
+      earlyBlightPercent: 45,
       needleAngle: 45,
       label: 'Bulan ini',
     };
@@ -134,7 +127,6 @@ export function getPeriodStats(
     totalScan: dayStats.totalScan,
     healthyPercent: dayStats.healthyPercent,
     earlyBlightPercent: dayStats.earlyBlightPercent,
-    unknownPercent: dayStats.unknownPercent,
     needleAngle: dayStats.needleAngle,
     label: period === 'custom' ? dayStats.fullDateStr : 'Hari ini',
   };

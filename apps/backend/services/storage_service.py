@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -35,7 +35,7 @@ class StorageService:
     def upload_image(self, payload: DetectionInput) -> UploadedImage:
         """Store each upload under a date/UUID path so existing objects are not replaced."""
         image = read_image_input(payload)
-        upload_date = datetime.now(UTC).strftime("%Y/%m/%d")
+        upload_date = datetime.now(timezone.utc).strftime("%Y/%m/%d")
         object_path = f"{upload_date}/{uuid4().hex}{image.extension}"
 
         self.client.storage.from_(self.bucket_name).upload(

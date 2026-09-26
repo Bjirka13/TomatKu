@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './index.css';
-import { getStatsForDate, toISODateString, parseISODateString, INDONESIAN_MONTHS } from './utils/dummyData';
+import { toISODateString, parseISODateString, INDONESIAN_MONTHS, INDONESIAN_DAYS } from './utils/dummyData';
+import { getStatsForDateReal } from './utils/api';
 
 interface HistoryProps {
   onNavigate?: (page: 'home' | 'camera' | 'summary' | 'history') => void;
@@ -13,8 +14,26 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
   const [pickerMonth, setPickerMonth] = useState<number>(new Date().getMonth());
   const [pickerYear, setPickerYear] = useState<number>(new Date().getFullYear());
   const dateInputRef = useRef<HTMLInputElement>(null);
+  
+  const [currentRecord, setCurrentRecord] = useState({
+    dayName: INDONESIAN_DAYS[new Date().getDay()],
+    dateStr: '',
+    fullDateStr: '',
+    totalScan: 0,
+    healthyPercent: 0,
+    earlyBlightPercent: 0,
+    needleAngle: 0,
+  });
 
-  const currentRecord = getStatsForDate(currentDate);
+  useEffect(() => {
+    let isMounted = true;
+    getStatsForDateReal(currentDate).then(stats => {
+      if (isMounted) {
+        setCurrentRecord(stats);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [currentDate]);
 
   const openCalendar = () => {
     setPickerMonth(currentDate.getMonth());
@@ -117,7 +136,6 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
   const circumference = 2 * Math.PI * radius;
   const healthyStroke = (currentRecord.healthyPercent / 100) * circumference;
   const earlyBlightStroke = (currentRecord.earlyBlightPercent / 100) * circumference;
-  const unknownStroke = (currentRecord.unknownPercent / 100) * circumference;
 
   const handleTabClick = (tab: 'home' | 'camera' | 'summary') => {
     if (onNavigate) {
@@ -369,10 +387,6 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                 <span className="w-2.5 h-2.5 rounded-full bg-[#782c2c]" />
                 <span>Early Blight</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#6a9ab0]" />
-                <span>Unknown</span>
-              </div>
             </div>
 
             {/* Donut Chart with Surrounding Labels */}
@@ -406,19 +420,6 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                     strokeDashoffset={`-${healthyStroke}`}
                     className="transition-all duration-700 ease-out"
                   />
-
-                  {/* Segment 3: Unknown - Slate Blue */}
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke="#6a9ab0"
-                    strokeWidth="32"
-                    strokeDasharray={`${unknownStroke} ${circumference}`}
-                    strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
-                    className="transition-all duration-700 ease-out"
-                  />
                 </g>
 
                 {/* Donut Center Label */}
@@ -441,15 +442,6 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
               </svg>
 
               {/* Floating Labels outside Donut */}
-              {/* Label Unknown (Top-Left) */}
-              <div className="absolute top-2.5 left-15 text-center pointer-events-none">
-                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
-                  Unknown
-                </span>
-                <span className="block text-[10px] font-medium text-[#4b5563]">
-                  {currentRecord.unknownPercent}%
-                </span>
-              </div>
 
               {/* Label Early Blight (Left) */}
               <div className="absolute top-[48%] -translate-y-1/2 left-[-12%] text-center pointer-events-none">

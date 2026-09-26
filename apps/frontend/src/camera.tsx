@@ -76,12 +76,27 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   };
 
   // Kirim hasil scan ke halaman Summary
-  const handleProceedToDetect = () => {
+  const handleProceedToDetect = async () => {
+    if (!capturedImage) return;
     setIsScanning(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/detect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image_base64: capturedImage }),
+      });
+      
+      if (!response.ok) {
+        console.error('Detection failed', await response.text());
+      }
+    } catch (error) {
+      console.error('Error during detection:', error);
+    } finally {
       setIsScanning(false);
       handleTabClick('summary');
-    }, 600);
+    }
   };
 
   return (
@@ -282,14 +297,14 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                 />
 
                 {/* Tombol Jepret Kamera Utama */}
-                {/* <button
+                <button
                   type="button"
                   onClick={capturePhoto}
                   className="w-15 h-15 rounded-full border-4 border-[#eb8e2d] bg-white shadow-[0_4px_16px_rgba(235,142,45,0.4)] flex items-center justify-center transition-transform hover:scale-105 active:scale-90 cursor-pointer group"
                   aria-label="Ambil foto"
                 >
                   <div className="w-10 h-10 rounded-full bg-[#eb8e2d] group-active:scale-90 transition-transform" />
-                </button> */}
+                </button> 
 
                 {/* Tombol Ganti Kamera Depan / Belakang */}
                 <button
