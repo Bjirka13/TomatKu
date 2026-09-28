@@ -3,6 +3,7 @@ from __future__ import annotations
 import uvicorn
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.history import router as history_router

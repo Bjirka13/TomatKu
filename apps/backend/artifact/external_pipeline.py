@@ -110,18 +110,19 @@ class ExternalSeverityPipeline:
         image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         image_hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
 
+        # --- KODE LAMA (BERMASALAH KARENA IRISAN MENGHAPUS BERCAK GELAP) ---
         leaf_mask = cv2.inRange(
             image_hsv,
             np.array(self.config["leaf_hsv_lower"]),
             np.array(self.config["leaf_hsv_upper"]),
         )
-
+        
         kernel_size = self.config["morphology_kernel_size"]
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         leaf_mask = cv2.morphologyEx(leaf_mask, cv2.MORPH_OPEN, kernel)
         leaf_mask = cv2.morphologyEx(leaf_mask, cv2.MORPH_CLOSE, kernel)
         leaf_mask = self._largest_component(leaf_mask)
-
+        
         symptom_mask = cv2.inRange(
             image_hsv,
             np.array(self.config["symptom_hsv_lower"]),
@@ -130,13 +131,39 @@ class ExternalSeverityPipeline:
         symptom_mask = cv2.bitwise_and(symptom_mask, leaf_mask)
         symptom_mask = cv2.morphologyEx(symptom_mask, cv2.MORPH_OPEN, kernel)
         symptom_mask = cv2.morphologyEx(symptom_mask, cv2.MORPH_CLOSE, kernel)
+        # -------------------------------------------------------------------
+
+        # --- KODE BARU (MENGGABUNGKAN AREA DAUN DAN BERCAK TERLEBIH DAHULU) ---
+        # leaf_hsv_mask = cv2.inRange(
+        #     image_hsv,
+        #     np.array(self.config["leaf_hsv_lower"]),
+        #     np.array(self.config["leaf_hsv_upper"]),
+        # )
+        # symptom_hsv_mask = cv2.inRange(
+        #     image_hsv,
+        #     np.array(self.config["symptom_hsv_lower"]),
+        #     np.array(self.config["symptom_hsv_upper"]),
+        # )
+
+        # full_leaf_mask = cv2.bitwise_or(leaf_hsv_mask, symptom_hsv_mask)
+
+        # kernel_size = self.config["morphology_kernel_size"]
+        # kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        # full_leaf_mask = cv2.morphologyEx(full_leaf_mask, cv2.MORPH_OPEN, kernel)
+        # full_leaf_mask = cv2.morphologyEx(full_leaf_mask, cv2.MORPH_CLOSE, kernel)
+        # leaf_mask = self._largest_component(full_leaf_mask)
+
+        # symptom_mask = cv2.bitwise_and(symptom_hsv_mask, leaf_mask)
+        # symptom_mask = cv2.morphologyEx(symptom_mask, cv2.MORPH_OPEN, kernel)
+        # symptom_mask = cv2.morphologyEx(symptom_mask, cv2.MORPH_CLOSE, kernel)
+        # ----------------------------------------------------------------------
 
         leaf_pixels = int(np.sum(leaf_mask > 0))
         symptom_pixels = int(np.sum(symptom_mask > 0))
         severity_pct = symptom_pixels / leaf_pixels * 100 if leaf_pixels else 0.0
 
         thresholds = self.config["severity_thresholds"]
-        if normalized_classification == "healthy":
+        if normalized_classification in {"healthy", "unknown"}:
             severity_level = None
             output_severity_pct = None
         elif severity_pct <= thresholds["light_max_pct"]:

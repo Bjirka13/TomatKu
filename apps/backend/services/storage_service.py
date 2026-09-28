@@ -24,6 +24,7 @@ class StorageService:
                 "to upload images."
             )
 
+        # pyrefly: ignore [missing-import]
         from supabase import create_client
 
         self.client: Any = create_client(

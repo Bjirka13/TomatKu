@@ -14,8 +14,12 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [hasAgreedPermission, setHasAgreedPermission] = useState(false);
+  const [hasAgreedPermission, setHasAgreedPermission] = useState(() => {
+    return sessionStorage.getItem('camera_permission_granted') === 'true';
+  });
+  const [showTutorial, setShowTutorial] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [detectionResult, setDetectionResult] = useState<any>(null);
 
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,12 +94,14 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
       
       if (!response.ok) {
         console.error('Detection failed', await response.text());
+      } else {
+        const json = await response.json();
+        setDetectionResult(json.data.prediction);
       }
     } catch (error) {
       console.error('Error during detection:', error);
     } finally {
       setIsScanning(false);
-      handleTabClick('summary');
     }
   };
 
@@ -104,8 +110,41 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
       <main className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col sm:rounded-[36px] sm:shadow-2xl relative overflow-hidden">
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col justify-between">
-          {/* Modal Minta Izin Kamera (Muncul Sebelum Kamera Aktif) */}
-          {!hasAgreedPermission && (
+          {/* Modal Tutorial (Muncul Pertama Kali) */}
+          {showTutorial && (
+            <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-5 animate-fade">
+              <div className="w-full max-w-[340px] bg-white rounded-[26px] p-6 sm:p-7 shadow-[0_24px_50px_rgba(0,0,0,0.65)] flex flex-col items-center text-center">
+                <h2 className="font-['Poppins'] font-bold text-[18px] text-[#2d3138] mb-4">
+                  Panduan Scan Daun
+                </h2>
+                <ul className="text-left text-[13.5px] text-[#4b5563] space-y-4 mb-7 w-full px-1">
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#eb8e2d]/20 text-[#eb8e2d] flex items-center justify-center font-bold text-[12px]">1</span>
+                    <span className="leading-snug">Posisikan daun tomat dengan jelas di tengah kamera.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#eb8e2d]/20 text-[#eb8e2d] flex items-center justify-center font-bold text-[12px]">2</span>
+                    <span className="leading-snug">Pastikan pencahayaan cukup terang dan stabil.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#eb8e2d]/20 text-[#eb8e2d] flex items-center justify-center font-bold text-[12px]">3</span>
+                    <span className="leading-snug">Tekan tombol foto untuk memulai deteksi penyakit.</span>
+                  </li>
+                </ul>
+                <button
+                  onClick={() => {
+                    setShowTutorial(false);
+                  }}
+                  className="w-full py-3 rounded-[18px] bg-[#eb8e2d] hover:bg-[#d68026] text-white font-bold text-[14.5px] shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  Mengerti
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Minta Izin Kamera (Muncul Setelah Tutorial Jika Belum Diizinkan) */}
+          {!showTutorial && !hasAgreedPermission && (
           <div className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-5 animate-fade">
             <div className="w-full max-w-[340px] bg-[#233523]/90 backdrop-blur-xl border border-white/20 rounded-[26px] p-6 sm:p-7 shadow-[0_24px_50px_rgba(0,0,0,0.65)] flex flex-col items-center text-center">
               <h2 className="font-['Poppins'] font-black text-[18px] sm:text-[19px] text-white tracking-wide mb-3 uppercase leading-snug">
@@ -127,7 +166,10 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
 
                 <button
                   type="button"
-                  onClick={() => setHasAgreedPermission(true)}
+                  onClick={() => {
+                    setHasAgreedPermission(true);
+                    sessionStorage.setItem('camera_permission_granted', 'true');
+                  }}
                   className="w-full py-3 px-3 rounded-[18px] bg-[#788944] hover:bg-[#879b4d] active:scale-95 text-white font-bold text-[14.5px] shadow-md transition-all cursor-pointer"
                 >
                   Izinkan
@@ -135,6 +177,50 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal Hasil Deteksi */}
+        {detectionResult && (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-5 animate-fade">
+          <div className="w-full max-w-[340px] bg-white rounded-[26px] p-6 shadow-[0_24px_50px_rgba(0,0,0,0.65)] flex flex-col items-center text-center border-2 border-[#eb8e2d]">
+            <h2 className="font-['Poppins'] font-black text-[20px] text-[#22252a] tracking-wide mb-3 uppercase leading-snug">
+              Hasil Deteksi
+            </h2>
+            <div className="w-full bg-gray-50 rounded-[16px] p-4 mb-5 flex flex-col gap-3 shadow-inner">
+              <div className="flex justify-between items-center text-[13.5px]">
+                <span className="text-gray-500 font-medium">Klasifikasi</span>
+                <span className={`font-bold uppercase ${detectionResult.classification === 'healthy' ? 'text-[#788944]' : 'text-[#d43939]'}`}>
+                  {detectionResult.classification === 'healthy' ? 'Sehat' : detectionResult.classification === 'early_blight' ? 'Bercak Kering' : 'Tidak Diketahui'}
+                </span>
+              </div>
+              {detectionResult.classification === 'early_blight' && (
+                <div className="flex justify-between items-center text-[13.5px]">
+                  <span className="text-gray-500 font-medium">Keparahan</span>
+                  <span className="font-bold text-[#d43939] uppercase">
+                    {detectionResult.severity_level}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-[13.5px]">
+                <span className="text-gray-500 font-medium">Kepercayaan</span>
+                <span className="font-bold text-[#34363a]">
+                  {detectionResult.confidence_pct}%
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDetectionResult(null);
+                handleTabClick('summary');
+              }}
+              className="w-full py-3 px-3 rounded-[18px] bg-gradient-to-r from-[#e58e26] to-[#d47b19] hover:brightness-110 active:scale-95 text-white font-bold text-[14.5px] shadow-[0_8px_20px_rgba(224,137,40,0.45)] transition-all cursor-pointer"
+            >
+              Lanjutkan ke Summary
+            </button>
+          </div>
+        </div>
         )}
 
         {/* Header Title */}

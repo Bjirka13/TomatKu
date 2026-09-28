@@ -44,7 +44,7 @@ class DetectionService:
         if classification not in {"healthy", "early_blight", "unknown"}:
             classification = "unknown"
 
-        if classification == "healthy":
+        if classification in {"healthy", "unknown"}:
             severity_level = None
             severity_pct = None
         elif severity_level not in {"ringan", "sedang", "parah"}:
