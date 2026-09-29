@@ -25,25 +25,36 @@ export async function fetchScanHistory(): Promise<ScanRecord[]> {
   }
 }
 
-export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyPercent: number, earlyBlightPercent: number, needleAngle: number } {
+export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyPercent: number, earlyBlightPercent: number, unknownPercent: number, severityCounts: { ringan: number, sedang: number, parah: number }, needleAngle: number } {
   const totalScan = records.length;
   if (totalScan === 0) {
-    return { totalScan: 0, healthyPercent: 0, earlyBlightPercent: 0, needleAngle: 0 };
+    return { totalScan: 0, healthyPercent: 0, earlyBlightPercent: 0, unknownPercent: 0, severityCounts: { ringan: 0, sedang: 0, parah: 0 }, needleAngle: 0 };
   }
   
   let healthyCount = 0;
   let earlyBlightCount = 0;
+  let unknownCount = 0;
+  let ringanCount = 0;
+  let sedangCount = 0;
+  let parahCount = 0;
   
   records.forEach(r => {
     if (r.classification === 'healthy') {
       healthyCount++;
     } else if (r.classification === 'early_blight') {
       earlyBlightCount++;
+    } else {
+      unknownCount++;
     }
+
+    if (r.severity_level === 'ringan') ringanCount++;
+    else if (r.severity_level === 'sedang') sedangCount++;
+    else if (r.severity_level === 'parah') parahCount++;
   });
 
   const healthyPercent = Math.round((healthyCount / totalScan) * 100);
   const earlyBlightPercent = Math.round((earlyBlightCount / totalScan) * 100);
+  const unknownPercent = 100 - healthyPercent - earlyBlightPercent;
   
   const healthDiff = (healthyPercent - earlyBlightPercent) / 100;
   const needleAngle = Math.max(-75, Math.min(75, Math.round(healthDiff * 75))); 
@@ -52,6 +63,8 @@ export function calculateStats(records: ScanRecord[]): { totalScan: number, heal
     totalScan,
     healthyPercent,
     earlyBlightPercent,
+    unknownPercent,
+    severityCounts: { ringan: ringanCount, sedang: sedangCount, parah: parahCount },
     needleAngle,
   };
 }

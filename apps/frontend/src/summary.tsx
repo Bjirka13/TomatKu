@@ -59,6 +59,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
     totalScan: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
+    severityCounts: { ringan: 0, sedang: 0, parah: 0 },
     needleAngle: 0,
     label: ''
   });
@@ -78,6 +79,10 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
   const circumference = 2 * Math.PI * radius; // ~452.39
   const healthyStroke = (currentStats.healthyPercent / 100) * circumference;
   const earlyBlightStroke = (currentStats.earlyBlightPercent / 100) * circumference;
+  const unknownStroke = (currentStats.unknownPercent / 100) * circumference;
+
+  const totalSick = currentStats.severityCounts.ringan + currentStats.severityCounts.sedang + currentStats.severityCounts.parah;
+  const maxBar = Math.max(1, totalSick);
 
   const handleTabClick = (tab: 'home' | 'camera' | 'summary' | 'history') => {
     if (onNavigate) {
@@ -227,7 +232,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
               Bulan ini
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => onNavigate?.('history')}
               className="py-2 px-2.5 rounded-[12px] bg-[#eb8e2d] hover:brightness-105 active:scale-95 text-white flex items-center justify-center shadow-sm transition-all cursor-pointer flex-shrink-0"
@@ -249,7 +254,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                 <line x1="3" y1="10" x2="21" y2="10" />
                 <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" strokeWidth="2.8" />
               </svg>
-            </button>
+            </button> */}
           </div>
 
           {/* Card 1: Total Deteksi */}
@@ -340,7 +345,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
             </h3>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-[#4b5563] mb-2">
+            <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-[#4b5563] mb-2 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#788e40]" />
                 <span>Healthy</span>
@@ -348,6 +353,10 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#782c2c]" />
                 <span>Early Blight</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#9ca3af]" />
+                <span>Unknown</span>
               </div>
             </div>
 
@@ -380,6 +389,19 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                     strokeWidth="32"
                     strokeDasharray={`${earlyBlightStroke} ${circumference}`}
                     strokeDashoffset={`-${healthyStroke}`}
+                    className="transition-all duration-700 ease-out"
+                  />
+
+                  {/* Segment 3: Unknown - Gray */}
+                  <circle
+                    cx="120"
+                    cy="120"
+                    r={radius}
+                    fill="none"
+                    stroke="#9ca3af"
+                    strokeWidth="32"
+                    strokeDasharray={`${unknownStroke} ${circumference}`}
+                    strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
                     className="transition-all duration-700 ease-out"
                   />
                 </g>
@@ -424,131 +446,66 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                   {currentStats.healthyPercent}%
                 </span>
               </div>
+              {/* Label Unknown (Top-Left) */}
+              <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
+                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
+                  Unknown
+                </span>
+                <span className="block text-[10px] font-medium text-[#4b5563]">
+                  {currentStats.unknownPercent}%
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Card 3: Distribusi keparahan */}
           <div className="w-full bg-white rounded-[24px] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.06)] border border-black/5 flex flex-col mb-4">
-            <h3 className="text-[14px] font-bold text-[#2d3138] mb-3">
+            <h3 className="text-[14px] font-bold text-[#2d3138] mb-4">
               Distribusi keparahan
             </h3>
 
-            {/* Gauge / Speedometer Chart */}
-            <div className="relative w-full max-w-[310px] mx-auto flex flex-col items-center">
-              <svg className="w-full h-auto overflow-visible" viewBox="0 0 320 185">
-                <defs>
-                  {/* Gauge Color Gradient */}
-                  <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#ef4444" />
-                    <stop offset="22%" stopColor="#f97316" />
-                    <stop offset="48%" stopColor="#f59e0b" />
-                    <stop offset="74%" stopColor="#84cc16" />
-                    <stop offset="100%" stopColor="#22c55e" />
-                  </linearGradient>
-
-                  {/* Drop shadow for needle */}
-                  <filter id="needleShadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.25" />
-                  </filter>
-                </defs>
-
-                {/* Main Gauge Arc Track */}
-                <path
-                  d="M 52 145 A 108 108 0 0 1 268 145"
-                  fill="none"
-                  stroke="url(#gaugeGradient)"
-                  strokeWidth="15"
-                  strokeLinecap="round"
-                />
-
-                {/* Inner Ticks */}
-                {Array.from({ length: 17 }).map((_, i) => {
-                  const angle = Math.PI - (i * Math.PI) / 16;
-                  const rInner = 86;
-                  const rOuter = 93;
-                  const x1 = 160 + rInner * Math.cos(angle);
-                  const y1 = 145 - rInner * Math.sin(angle);
-                  const x2 = 160 + rOuter * Math.cos(angle);
-                  const y2 = 145 - rOuter * Math.sin(angle);
-                  return (
-                    <line
-                      key={i}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke="#d1d5db"
-                      strokeWidth={i % 4 === 0 ? '2' : '1.2'}
-                      strokeLinecap="round"
-                    />
-                  );
-                })}
-
-                {/* Glowing Circular Nodes on Arc */}
-                {/* Node 1: Red (Parah - 180 deg) */}
-                <g transform="translate(52, 145)">
-                  <circle r="9" fill="#ef4444" opacity="0.3" />
-                  <circle r="6.5" fill="#ef4444" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Node 2: Red-Orange (~144 deg) */}
-                <g transform="translate(73, 82)">
-                  <circle r="9" fill="#f97316" opacity="0.3" />
-                  <circle r="6.5" fill="#f97316" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Node 3: Orange (~108 deg) */}
-                <g transform="translate(127, 42)">
-                  <circle r="9" fill="#f59e0b" opacity="0.3" />
-                  <circle r="6.5" fill="#f59e0b" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Node 4: Lime-Yellow (~72 deg) */}
-                <g transform="translate(193, 42)">
-                  <circle r="9" fill="#84cc16" opacity="0.3" />
-                  <circle r="6.5" fill="#84cc16" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Node 5: Green (~36 deg) */}
-                <g transform="translate(247, 82)">
-                  <circle r="9" fill="#22c55e" opacity="0.3" />
-                  <circle r="6.5" fill="#22c55e" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Node 6: Deep Green (Normal - 0 deg) */}
-                <g transform="translate(268, 145)">
-                  <circle r="9" fill="#16a34a" opacity="0.3" />
-                  <circle r="6.5" fill="#16a34a" stroke="#ffffff" strokeWidth="2.5" />
-                </g>
-
-                {/* Speedometer Needle */}
-                <g
-                  transform={`rotate(${currentStats.needleAngle} 160 145)`}
-                  filter="url(#needleShadow)"
-                  className="transition-transform duration-700 ease-out"
-                >
-                  <polygon
-                    points="155,145 160,54 165,145"
-                    fill="#26292e"
+            {/* Bar Chart */}
+            <div className="flex flex-col gap-4">
+              {/* Ringan */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between text-[12px] font-semibold text-[#4b5563]">
+                  <span>Ringan</span>
+                  <span>{currentStats.severityCounts.ringan}</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#f59e0b] rounded-full transition-all duration-700 ease-out" 
+                    style={{ width: `${(currentStats.severityCounts.ringan / maxBar) * 100}%` }}
                   />
-                  {/* Needle tip detail */}
-                  <circle cx="160" cy="54" r="2" fill="#26292e" />
-                </g>
+                </div>
+              </div>
 
-                {/* Center Pivot Hub */}
-                <circle cx="160" cy="145" r="16" fill="rgba(0,0,0,0.06)" />
-                <circle cx="160" cy="145" r="12" fill="#26292e" stroke="#ffffff" strokeWidth="2.5" />
-                <circle cx="160" cy="145" r="4.5" fill="#525866" />
-              </svg>
+              {/* Sedang */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between text-[12px] font-semibold text-[#4b5563]">
+                  <span>Sedang</span>
+                  <span>{currentStats.severityCounts.sedang}</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#f97316] rounded-full transition-all duration-700 ease-out" 
+                    style={{ width: `${(currentStats.severityCounts.sedang / maxBar) * 100}%` }}
+                  />
+                </div>
+              </div>
 
-              {/* Bottom Labels: PARAH & NORMAL */}
-              <div className="w-full flex justify-between items-center px-4 -mt-2">
-                <span className="font-['Poppins'] font-black text-[17px] text-[#22252a] tracking-tight">
-                  PARAH
-                </span>
-                <span className="font-['Poppins'] font-black text-[17px] text-[#22252a] tracking-tight">
-                  NORMAL
-                </span>
+              {/* Parah */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between text-[12px] font-semibold text-[#4b5563]">
+                  <span>Parah</span>
+                  <span>{currentStats.severityCounts.parah}</span>
+                </div>
+                <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#ef4444] rounded-full transition-all duration-700 ease-out" 
+                    style={{ width: `${(currentStats.severityCounts.parah / maxBar) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>

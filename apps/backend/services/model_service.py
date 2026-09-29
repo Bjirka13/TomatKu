@@ -59,7 +59,17 @@ class ModelService:
         if not boxes:
             return "unknown", 0.0, []
 
-        best_box = max(boxes, key=lambda item: item["confidence_pct"])
+        # --- KODE LAMA (HANYA MENGAMBIL CONFIDENCE TERTINGGI) ---
+        # best_box = max(boxes, key=lambda item: item["confidence_pct"])
+        # ---------------------------------------------------------
+
+        # --- KODE BARU (MEMPRIORITAS KAN PENYAKIT JIKA TERDETEKSI) ---
+        def box_priority(item: dict[str, Any]) -> tuple[int, float]:
+            # Prioritize early_blight (1) over healthy/unknown (0)
+            is_disease = 1 if item["classification"] == "early_blight" else 0
+            return (is_disease, item["confidence_pct"])
+
+        best_box = max(boxes, key=box_priority)
         return (
             str(best_box["classification"]),
             float(best_box["confidence_pct"]),
