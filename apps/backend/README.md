@@ -38,13 +38,25 @@ psql -h localhost -p 5432 -U postgres -d tomatku -f database/init.sql
 
 ### Setup Backend
 
+Masuk ke folder backend, lalu buat file `.env` dari template:
+
+```powershell
+Set-Location apps/backend
+Copy-Item .env.example .env
+```
+
+Edit `.env` dan sesuaikan konfigurasi database, `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, serta `MODEL_PATH` dengan model yang tersedia.
+Jangan commit `.env` karena file tersebut dapat berisi kredensial; gunakan
+`.env.example` sebagai template tanpa nilai rahasia.
+
 Install dependency Python:
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-Pastikan konfigurasi koneksi database di `.env` sesuai, lalu jalankan backend:
+Setelah konfigurasi `.env` selesai, jalankan backend:
 
 ```powershell
 python -m uvicorn main:app --reload --port 8000
@@ -122,10 +134,6 @@ Contoh respons sukses, disederhanakan:
 	}
 }
 ```
-
-Gunakan `data.prediction.boxes` untuk menggambar bounding box di atas gambar. Koordinat box adalah piksel pada gambar asli, sehingga frontend perlu menyesuaikan skalanya saat gambar ditampilkan dengan ukuran berbeda. URL gambar tersimpan ada di `data.prediction.image_path`. Persentase confidence dan severity menggunakan rentang `0` sampai `100`.
-
-Gambar yang bukan JPEG/PNG, rusak, atau melebihi batas ukuran menghasilkan HTTP `400`; validasi request menghasilkan `422`; kegagalan inferensi, storage, atau database menghasilkan `500`.
 
 ## Endpoint yang Belum Tersedia
 
