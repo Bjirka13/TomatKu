@@ -22,9 +22,14 @@ Versi dependency Python [`requirements.txt`](requirements.txt)
 
 ## Persiapan
 
-### Setup Database
+### Setup Environtment
 
-Pastikan PostgreSQL berjalan, lalu dari root repository buat database lokal:
+```powershell
+Set-Location apps/backend
+Copy-Item .env.example .env
+```
+
+### Setup Database
 
 ```powershell
 psql -h localhost -p 5432 -U postgres -d postgres -c "CREATE DATABASE tomatku;"
@@ -37,18 +42,6 @@ psql -h localhost -p 5432 -U postgres -d tomatku -f database/init.sql
 ```
 
 ### Setup Backend
-
-Masuk ke folder backend, lalu buat file `.env` dari template:
-
-```powershell
-Set-Location apps/backend
-Copy-Item .env.example .env
-```
-
-Edit `.env` dan sesuaikan konfigurasi database, `SUPABASE_URL`,
-`SUPABASE_SERVICE_ROLE_KEY`, serta `MODEL_PATH` dengan model yang tersedia.
-Jangan commit `.env` karena file tersebut dapat berisi kredensial; gunakan
-`.env.example` sebagai template tanpa nilai rahasia.
 
 Install dependency Python:
 
