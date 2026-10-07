@@ -131,8 +131,15 @@ class DetectionService:
         }
 
     def process_image(self, payload: DetectionInput) -> dict[str, Any]:
-        """Delete the uploaded object if saving its prediction fails."""
+        """Delete the uploaded object if saving its prediction == unknown."""
         prediction = self.predict_from_image(payload)
+    
+        if prediction.classification == "unknown":
+            return {
+                "prediction": prediction.model_dump(),
+                "saved": False,
+            }
+        
         storage_service = self.storage_service or StorageService()
         uploaded_image = storage_service.upload_image(payload)
         prediction.image_path = uploaded_image.public_url
