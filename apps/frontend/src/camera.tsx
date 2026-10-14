@@ -9,6 +9,53 @@ interface CameraProps {
   previousPage?: 'landing' | 'pageone' | 'home' | 'camera' | 'summary' | 'history';
 }
 
+interface LightingAssessment {
+  isChecking: boolean;
+  brightness: number;
+  isTooDark: boolean;
+  isTooBright: boolean;
+}
+
+const analyzeImageBrightness = (
+  imageSrc: string
+): Promise<{ brightness: number; isTooDark: boolean; isTooBright: boolean }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+          resolve({ brightness: 128, isTooDark: false, isTooBright: false });
+          return;
+        }
+        ctx.drawImage(img, 0, 0, 100, 100);
+        const { data } = ctx.getImageData(0, 0, 100, 100);
+        let total = 0;
+        const pixelCount = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        }
+        const avg = Math.round(total / pixelCount);
+        resolve({
+          brightness: avg,
+          isTooDark: avg < 60,
+          isTooBright: avg > 235,
+        });
+      } catch {
+        resolve({ brightness: 128, isTooDark: false, isTooBright: false });
+      }
+    };
+    img.onerror = () => {
+      resolve({ brightness: 128, isTooDark: false, isTooBright: false });
+    };
+    img.src = imageSrc;
+  });
+};
+
 export default function Camera({ onNavigate, activeTab = 'camera', previousPage = 'home' }: CameraProps) {
   const [currentTab, setCurrentTab] = useState<'home' | 'camera' | 'summary'>(activeTab);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
@@ -20,6 +67,9 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   const [showTutorial, setShowTutorial] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [detectionResult, setDetectionResult] = useState<any>(null);
+  const [lightingAssessment, setLightingAssessment] = useState<LightingAssessment | null>(null);
+  const [liveIsTooDark, setLiveIsTooDark] = useState(false);
+  const [scanErrorMessage, setScanErrorMessage] = useState<string | null>(null);
 
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +77,39 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   useEffect(() => {
     setCurrentTab(activeTab);
   }, [activeTab]);
+
+  // Real-time live check pada viewfinder kamera
+  useEffect(() => {
+    if (!hasAgreedPermission || capturedImage || showTutorial) return;
+
+    const interval = setInterval(() => {
+      if (webcamRef.current) {
+        const video = webcamRef.current.video;
+        if (video && video.readyState >= 2) {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 60;
+            canvas.height = 60;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, 60, 60);
+              const data = ctx.getImageData(0, 0, 60, 60).data;
+              let sum = 0;
+              for (let i = 0; i < data.length; i += 4) {
+                sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+              }
+              const avg = sum / (data.length / 4);
+              setLiveIsTooDark(avg < 55);
+            }
+          } catch {
+            // Abaikan kesalahan pembacaan canvas cross-origin
+          }
+        }
+      }
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [hasAgreedPermission, capturedImage, showTutorial]);
 
   const handleTabClick = (tab: 'home' | 'camera' | 'summary' | 'history') => {
     if (tab === 'home' || tab === 'camera' || tab === 'summary') {
@@ -51,16 +134,33 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
     height: { ideal: 1280 },
   };
 
+  // Simpan foto dan lakukan evaluasi pencahayaan
+  const handleSetCapturedImage = async (imageSrc: string | null) => {
+    setCapturedImage(imageSrc);
+    setScanErrorMessage(null);
+    if (!imageSrc) {
+      setLightingAssessment(null);
+      return;
+    }
+    setLightingAssessment({ isChecking: true, brightness: 0, isTooDark: false, isTooBright: false });
+    const result = await analyzeImageBrightness(imageSrc);
+    setLightingAssessment({
+      isChecking: false,
+      brightness: result.brightness,
+      isTooDark: result.isTooDark,
+      isTooBright: result.isTooBright,
+    });
+  };
+
   // Tangkap foto dari webcam
   const capturePhoto = useCallback(() => {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
-        setCapturedImage(imageSrc);
+        handleSetCapturedImage(imageSrc);
       }
     }
   }, [webcamRef]);
-  void capturePhoto;
 
   // Ganti kamera depan / belakang
   const toggleCamera = () => {
@@ -73,16 +173,21 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCapturedImage(reader.result as string);
+        handleSetCapturedImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Kirim hasil scan ke halaman Summary
+  // Kirim hasil scan ke halaman Summary (dicegah jika pencahayaan gelap)
   const handleProceedToDetect = async () => {
     if (!capturedImage) return;
+    if (lightingAssessment?.isTooDark) {
+      setScanErrorMessage('Pencahayaan foto terlalu gelap. Harap cari tempat yang lebih terang dan ambil ulang foto.');
+      return;
+    }
     setIsScanning(true);
+    setScanErrorMessage(null);
     try {
       const response = await fetch('http://127.0.0.1:8000/api/detect', {
         method: 'POST',
@@ -93,13 +198,17 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
       });
       
       if (!response.ok) {
-        console.error('Detection failed', await response.text());
+        const errorJson = await response.json().catch(() => null);
+        const errorDetail = errorJson?.detail || 'Deteksi daun gagal.';
+        setScanErrorMessage(errorDetail);
+        console.error('Detection failed', errorDetail);
       } else {
         const json = await response.json();
         setDetectionResult(json.data.prediction);
       }
     } catch (error) {
       console.error('Error during detection:', error);
+      setScanErrorMessage('Gagal terhubung ke server backend.');
     } finally {
       setIsScanning(false);
     }
@@ -236,24 +345,94 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
           {capturedImage ? (
             /* Mode Preview Foto yang Berhasil Diambil */
             <div className="w-full max-w-[350px] bg-[#728543] rounded-[28px] p-4 shadow-[0_16px_30px_-4px_rgba(90,115,45,0.38)] flex flex-col items-center animate-fade">
-              <div className="w-full aspect-[4/3] h-500px rounded-[20px] overflow-hidden bg-black mb-3.5 relative shadow-inner">
+              <div className="w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-black mb-3 relative shadow-inner">
                 <img
                   src={capturedImage}
                   alt="Foto Daun Terdeteksi"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                  Foto Terambil
-                </div>
+
+                {/* Badge Status Pencahayaan di Atas Foto */}
+                {lightingAssessment?.isChecking ? (
+                  <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-spin"></span>
+                    Mengevaluasi Cahaya...
+                  </div>
+                ) : lightingAssessment?.isTooDark ? (
+                  <div className="absolute top-2.5 left-2.5 bg-[#b91c1c]/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-white flex items-center gap-1.5 shadow-md border border-red-300/30">
+                    <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
+                    ⚠️ Terlalu Gelap ({lightingAssessment.brightness}/255)
+                  </div>
+                ) : lightingAssessment?.isTooBright ? (
+                  <div className="absolute top-2.5 left-2.5 bg-amber-600/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-white flex items-center gap-1.5 shadow-md border border-amber-300/30">
+                    <span className="w-2 h-2 rounded-full bg-yellow-200"></span>
+                    ⚠️ Terlalu Silau ({lightingAssessment.brightness}/255)
+                  </div>
+                ) : (
+                  <div className="absolute top-2.5 left-2.5 bg-emerald-700/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-md">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    ✓ Pencahayaan Baik
+                  </div>
+                )}
               </div>
 
+              {/* Banner Peringatan "Cari Tempat Terang" jika Terlalu Gelap */}
+              {lightingAssessment && lightingAssessment.isTooDark && (
+                <div className="w-full bg-[#2a1313]/90 border border-red-400/50 rounded-[18px] p-3 mb-3 text-left flex items-start gap-2.5 shadow-lg animate-fade">
+                  <div className="w-7 h-7 rounded-full bg-red-500/25 text-red-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[12.5px] font-bold text-[#fca5a5] leading-snug">
+                      Pencahayaan Kurang Optimal
+                    </p>
+                    <p className="text-[11.5px] text-white/85 leading-snug mt-0.5">
+                      Foto terlalu gelap untuk AI. Silakan <strong>cari tempat terang</strong> dan ambil ulang foto agar hasil diagnosis akurat.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Banner Peringatan jika Terlalu Silau */}
+              {lightingAssessment && lightingAssessment.isTooBright && (
+                <div className="w-full bg-[#2a1d13]/90 border border-amber-400/50 rounded-[18px] p-3 mb-3 text-left flex items-start gap-2.5 shadow-lg animate-fade">
+                  <div className="w-7 h-7 rounded-full bg-amber-500/25 text-amber-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[12.5px] font-bold text-[#fde047] leading-snug">
+                      Pencahayaan Terlalu Silau
+                    </p>
+                    <p className="text-[11.5px] text-white/85 leading-snug mt-0.5">
+                      Silakan hindari pantulan cahaya langsung dan ambil ulang foto di tempat teduh.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error dari Backend jika ada */}
+              {scanErrorMessage && (
+                <div className="w-full bg-[#3a1414]/90 border border-red-500/70 rounded-[16px] p-2.5 mb-2.5 text-center text-red-200 text-[11.5px] shadow-sm">
+                  {scanErrorMessage}
+                </div>
+              )}
+
               <div className="w-full flex flex-col gap-2.5">
+                {/* Tombol Periksa Kondisi Daun (Terkunci jika terlalu gelap) */}
                 <button
                   type="button"
                   onClick={handleProceedToDetect}
-                  disabled={isScanning}
-                  className="w-full py-3 px-4 rounded-[20px] bg-gradient-to-r from-[#e58e26] to-[#d47b19] text-white font-bold text-[15px] shadow-[0_8px_20px_rgba(224,137,40,0.45)] hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  disabled={isScanning || lightingAssessment?.isChecking || lightingAssessment?.isTooDark}
+                  className={`w-full py-3 px-4 rounded-[20px] font-bold text-[14.5px] transition-all flex items-center justify-center gap-2 ${
+                    lightingAssessment?.isTooDark
+                      ? 'bg-black/25 text-white/40 cursor-not-allowed border border-white/10 shadow-none'
+                      : 'bg-gradient-to-r from-[#e58e26] to-[#d47b19] text-white shadow-[0_8px_20px_rgba(224,137,40,0.45)] hover:brightness-110 active:scale-95 cursor-pointer'
+                  }`}
+                  title={lightingAssessment?.isTooDark ? 'Pencahayaan kurang: cari tempat terang dahulu' : 'Kirim foto ke AI'}
                 >
                   {isScanning ? (
                     <>
@@ -262,6 +441,13 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
                       <span>Menganalisis Daun...</span>
+                    </>
+                  ) : lightingAssessment?.isTooDark ? (
+                    <>
+                      <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <span>Terkunci (Cari Tempat Terang)</span>
                     </>
                   ) : (
                     <>
@@ -273,13 +459,21 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                   )}
                 </button>
 
+                {/* Tombol Ambil Ulang Foto (Menjadi tombol utama mencolok jika foto terlalu gelap) */}
                 <button
                   type="button"
-                  onClick={() => setCapturedImage(null)}
+                  onClick={() => handleSetCapturedImage(null)}
                   disabled={isScanning}
-                  className="w-full py-2.5 px-4 rounded-[20px] bg-white/15 hover:bg-white/25 text-white font-semibold text-[13.5px] transition-all cursor-pointer"
+                  className={`w-full py-2.5 px-4 rounded-[20px] font-semibold text-[13.5px] transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    lightingAssessment?.isTooDark
+                      ? 'bg-[#eb8e2d] hover:bg-[#d68026] text-white shadow-md font-bold'
+                      : 'bg-white/15 hover:bg-white/25 text-white'
+                  }`}
                 >
-                  Ambil Ulang Foto
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>{lightingAssessment?.isTooDark ? 'Ambil Ulang di Tempat Terang' : 'Ambil Ulang Foto'}</span>
                 </button>
               </div>
             </div>
@@ -301,6 +495,16 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                 ) : (
                   <div className="w-full h-full bg-[#1e251a] flex items-center justify-center text-white/50 text-xs">
                     Kamera menunggu izin...
+                  </div>
+                )}
+
+                {/* Real-time Live Lighting Warning Banner */}
+                {liveIsTooDark && (
+                  <div className="absolute top-11 inset-x-3 flex justify-center pointer-events-none z-20 animate-fade">
+                    <div className="bg-[#b91c1c]/90 backdrop-blur-md text-white text-[11.5px] px-3.5 py-1.5 rounded-full font-bold shadow-lg flex items-center gap-2 border border-red-300/40">
+                      <span className="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
+                      <span>⚠️ Cahaya Terlalu Redup, Cari Tempat Terang</span>
+                    </div>
                   </div>
                 )}
 

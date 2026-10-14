@@ -74,6 +74,16 @@ class DetectionService:
         image_bgr = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         if image_bgr is None:
             raise ValueError("Unable to decode image data")
+
+        # Validasi kualitas pencahayaan citra (filter)
+        gray_image = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+        brightness_score = float(np.mean(gray_image))
+        if brightness_score < 45.0:
+            raise ValueError(
+                f"Kualitas pencahayaan citra terlalu gelap ({brightness_score:.1f}/255). "
+                "Harap cari tempat yang lebih terang sebelum foto dikirim ke AI."
+            )
+
         image = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
 
         classification, confidence_pct, boxes = self.model_service.predict(image)
