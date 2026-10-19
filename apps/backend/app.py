@@ -19,7 +19,12 @@ gradio_demo = gr.Interface(
     api_name="predict",
 )
 
-app = gr.mount_gradio_app(fastapi_app, gradio_demo, path="/gradio")
+app = gr.mount_gradio_app(
+    fastapi_app,
+    gradio_demo,
+    path="/gradio",
+    ssr_mode=False,
+)
 
 
 if __name__ == "__main__":
