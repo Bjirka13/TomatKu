@@ -44,3 +44,21 @@ class DetectionResult(BaseModel):
     def confidence_ratio(self) -> float:
         """Convert percent to a bounded 0-1 ratio for consumers that need fractions."""
         return max(0.0, min(1.0, self.confidence_pct / 100.0))
+
+    @model_validator(mode="after")
+    def validate_classification_severity(self) -> DetectionResult:
+        has_severity = (
+            self.severity_level is not None
+            and self.severity_pct is not None
+        )
+        if self.classification == "early_blight" and not has_severity:
+            raise ValueError(
+                "Early blight predictions require a severity level and percentage"
+            )
+        if self.classification != "early_blight" and (
+            self.severity_level is not None or self.severity_pct is not None
+        ):
+            raise ValueError(
+                "Healthy and unknown predictions cannot include severity values"
+            )
+        return self
