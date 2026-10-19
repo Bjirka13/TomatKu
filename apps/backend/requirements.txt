@@ -7,6 +7,6 @@ psycopg2-binary==2.9.13
 pydantic==2.13.4
 python-multipart==0.0.32
 supabase==2.31.0
-torch==2.14.0
+torch==2.13.0
 ultralytics==8.4.160
 uvicorn[standard]==0.48.0
