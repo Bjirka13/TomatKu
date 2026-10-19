@@ -2,6 +2,7 @@
 
 import gradio as gr
 import uvicorn
+from fastapi import Request
 from fastapi.responses import RedirectResponse
 
 from api.routes.predict import service
@@ -9,10 +10,13 @@ from main import app as fastapi_app
 
 
 @fastapi_app.get("/", include_in_schema=False)
-async def gradio_root():
+async def gradio_root(request: Request):
     # Keep redirects relative so Hugging Face's /spaces/<owner>/<name> proxy
-    # prefix is preserved when the Space is opened from its Hub page.
-    return RedirectResponse(url="gradio/")
+    # prefix and private-Space signature are preserved from the Hub page.
+    target = "gradio/"
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    return RedirectResponse(url=target)
 
 
 gradio_demo = gr.Interface(
