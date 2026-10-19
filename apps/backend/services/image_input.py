@@ -3,10 +3,24 @@ from __future__ import annotations
 import base64
 import binascii
 from dataclasses import dataclass
+import math
+import os
 from pathlib import Path
+import tempfile
 
+import cv2
+import numpy as np
 from config import settings
 from models.validation import DetectionInput
+
+
+REALTIME_FPS = settings.REALTIME_FPS
+REALTIME_DURATION_SECONDS = settings.REALTIME_DURATION_SECONDS
+REALTIME_MAX_DURATION_SECONDS = settings.REALTIME_MAX_DURATION_SECONDS
+REALTIME_FRAME_COUNT = settings.REALTIME_FRAME_COUNT
+REALTIME_MIN_CONSISTENT_FRAMES = settings.REALTIME_MIN_CONSISTENT_FRAMES
+REALTIME_MIN_DISEASE_FRAMES = settings.REALTIME_MIN_DISEASE_FRAMES
+SUPPORTED_VIDEO_EXTENSIONS = settings.SUPPORTED_VIDEO_EXTENSIONS
 
 
 @dataclass(frozen=True)
@@ -14,6 +28,89 @@ class ImageInput:
     data: bytes
     extension: str
     content_type: str
+
+
+def read_video_frames(video_data: bytes, filename: str) -> list[np.ndarray]:
+    """Decode configured realtime RGB samples across the uploaded video."""
+    if not video_data:
+        raise ValueError("Video data is empty")
+    if len(video_data) > settings.MAX_VIDEO_SIZE_BYTES:
+        raise ValueError("Video exceeds the maximum allowed size")
+
+    extension = Path(filename).suffix.lower()
+    if extension not in SUPPORTED_VIDEO_EXTENSIONS:
+        raise ValueError("Supported video formats are MP4, MOV, AVI, MKV, and WEBM")
+
+    file_descriptor, temp_path = tempfile.mkstemp(suffix=extension)
+    try:
+        with os.fdopen(file_descriptor, "wb") as temp_file:
+            temp_file.write(video_data)
+
+        capture = cv2.VideoCapture(temp_path)
+        try:
+            if not capture.isOpened():
+                raise ValueError("Unable to open uploaded video")
+
+            source_fps = float(capture.get(cv2.CAP_PROP_FPS))
+            if not math.isfinite(source_fps) or source_fps < REALTIME_FPS:
+                raise ValueError(
+                    f"Video must have a frame rate of at least {REALTIME_FPS} FPS"
+                )
+
+            source_frame_count = float(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            if not math.isfinite(source_frame_count) or source_frame_count <= 0:
+                raise ValueError("Unable to determine uploaded video duration")
+            source_duration = source_frame_count / source_fps
+            if source_duration < REALTIME_DURATION_SECONDS:
+                raise ValueError(
+                    f"Video must be at least {REALTIME_DURATION_SECONDS:g} "
+                    "seconds long"
+                )
+            if source_duration > REALTIME_MAX_DURATION_SECONDS:
+                raise ValueError(
+                    "Video exceeds the maximum realtime duration of "
+                    f"{REALTIME_MAX_DURATION_SECONDS:g} seconds"
+                )
+
+            sample_count = math.floor(source_duration * REALTIME_FPS + 1e-9)
+            if sample_count < REALTIME_FRAME_COUNT:
+                raise ValueError(
+                    f"Video must be at least {REALTIME_DURATION_SECONDS:g} "
+                    "seconds long"
+                )
+
+            frames: list[np.ndarray] = []
+            sample_frame_indices = {
+                round(sample_index * source_fps / REALTIME_FPS): sample_index
+                for sample_index in range(sample_count)
+            }
+            last_sample_frame_index = max(sample_frame_indices)
+            sampled_frame_count = 0
+            for source_frame_index in range(last_sample_frame_index + 1):
+                if source_frame_index in sample_frame_indices:
+                    success, frame_bgr = capture.read()
+                    if not success or frame_bgr is None:
+                        raise ValueError(
+                            "Unable to read all sampled video frames"
+                        )
+                    frames.append(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB))
+                    sampled_frame_count += 1
+                elif not capture.grab():
+                    raise ValueError(
+                        f"Video must be at least {REALTIME_DURATION_SECONDS:g} "
+                        "seconds long"
+                    )
+
+            if sampled_frame_count != sample_count:
+                raise ValueError(
+                    f"Video sampling failed: expected {sample_count} frames, "
+                    f"received {sampled_frame_count}"
+                )
+            return frames
+        finally:
+            capture.release()
+    finally:
+        os.unlink(temp_path)
 
 
 def read_image_input(payload: DetectionInput) -> ImageInput:

@@ -18,6 +18,7 @@
 
 3. **Pemindai Kamera Pintar (*Camera Page*)**
    - **Live Viewfinder**: Akses langsung ke kamera perangkat dengan reticle pemandu fokus dan efek animasi laser scan.
+   - **Deteksi Realtime**: Tombol mulai scan mengirim frame JPEG kamera melalui WebSocket secara otomatis dan menampilkan bounding box per frame; scan berlanjut setelah hasil stabil disimpan sampai pengguna menghentikannya.
    - **Switch Camera**: Kemudahan berpindah antara kamera depan dan kamera belakang.
    - **Alternatif Unggah Galeri**: Fitur upload foto langsung dari penyimpanan jika akses kamera tidak diizinkan atau tidak tersedia.
    - **Mode Preview & Verifikasi**: Tinjau ulang foto sebelum diproses untuk analisis.

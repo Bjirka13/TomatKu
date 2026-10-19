@@ -66,6 +66,12 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   });
   const [showTutorial, setShowTutorial] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [isRealtimeScanning, setIsRealtimeScanning] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState('');
+  const [realtimeFramesSeen, setRealtimeFramesSeen] = useState(0);
+  const [realtimePrediction, setRealtimePrediction] = useState<any>(null);
+  const [realtimeFrameSize, setRealtimeFrameSize] = useState({ width: 1, height: 1 });
+  const [realtimeStableResult, setRealtimeStableResult] = useState<any>(null);
   const [detectionResult, setDetectionResult] = useState<any>(null);
   const [lightingAssessment, setLightingAssessment] = useState<LightingAssessment | null>(null);
   const [liveIsTooDark, setLiveIsTooDark] = useState(false);
@@ -73,6 +79,10 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
 
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const realtimeSocketRef = useRef<WebSocket | null>(null);
+  const realtimeIntervalRef = useRef<number | null>(null);
+  const realtimeFrameInFlightRef = useRef(false);
+  const realtimeActiveRef = useRef(false);
 
   useEffect(() => {
     setCurrentTab(activeTab);
@@ -150,20 +160,193 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
       isTooDark: result.isTooDark,
       isTooBright: result.isTooBright,
     });
+  const stopRealtimeStream = useCallback(() => {
+    realtimeActiveRef.current = false;
+    realtimeFrameInFlightRef.current = false;
+    if (realtimeIntervalRef.current !== null) {
+      window.clearInterval(realtimeIntervalRef.current);
+      realtimeIntervalRef.current = null;
+    }
+    const socket = realtimeSocketRef.current;
+    realtimeSocketRef.current = null;
+    if (socket && socket.readyState < WebSocket.CLOSING) {
+      socket.close(1000, 'Camera scan stopped');
+    }
+    setIsRealtimeScanning(false);
+  }, []);
+
+  useEffect(() => stopRealtimeStream, [stopRealtimeStream]);
+  useEffect(() => {
+    if (activeTab !== 'camera') {
+      stopRealtimeStream();
+    }
+  }, [activeTab, stopRealtimeStream]);
+
+  const startRealtimeStream = () => {
+    const video = webcamRef.current?.video;
+    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      setRealtimeStatus('Kamera belum siap. Izinkan akses kamera terlebih dahulu.');
+      return;
+    }
+
+    stopRealtimeStream();
+    setDetectionResult(null);
+    setRealtimeFramesSeen(0);
+    setRealtimePrediction(null);
+    setRealtimeStableResult(null);
+    setRealtimeStatus('Menghubungkan ke server...');
+    setIsRealtimeScanning(true);
+    realtimeActiveRef.current = true;
+
+    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(
+      `${socketProtocol}//${window.location.hostname}:8000/api/detect/realtime/stream`,
+    );
+    realtimeSocketRef.current = socket;
+
+    socket.onopen = () => {
+      setRealtimeStatus('Terhubung. Menunggu server siap...');
+    };
+    socket.onmessage = (event: MessageEvent<string>) => {
+      const message = JSON.parse(event.data);
+      if (message.type === 'ready') {
+        setRealtimeStatus('Pemindaian realtime berjalan...');
+        const intervalMs = 1000 / message.frame_rate;
+        realtimeIntervalRef.current = window.setInterval(async () => {
+          if (
+            !realtimeActiveRef.current
+            || realtimeFrameInFlightRef.current
+            || socket.readyState !== WebSocket.OPEN
+          ) {
+            return;
+          }
+
+          const videoElement = webcamRef.current?.video;
+          if (
+            !videoElement
+            || videoElement.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+          ) {
+            return;
+          }
+
+          realtimeFrameInFlightRef.current = true;
+          const scale = Math.min(
+            1,
+            640 / Math.max(videoElement.videoWidth, videoElement.videoHeight),
+          );
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(videoElement.videoWidth * scale));
+          canvas.height = Math.max(1, Math.round(videoElement.videoHeight * scale));
+          const context = canvas.getContext('2d');
+          if (!context) {
+            realtimeFrameInFlightRef.current = false;
+            setRealtimeStatus('Browser tidak dapat menyiapkan frame kamera.');
+            return;
+          }
+          context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(
+            (blob) => {
+              if (
+                !blob
+                || !realtimeActiveRef.current
+                || socket.readyState !== WebSocket.OPEN
+              ) {
+                realtimeFrameInFlightRef.current = false;
+                return;
+              }
+              try {
+                socket.send(blob);
+              } catch {
+                realtimeFrameInFlightRef.current = false;
+                setRealtimeStatus('Frame kamera gagal dikirim ke server.');
+              }
+            },
+            'image/jpeg',
+            0.9,
+          );
+        }, intervalMs);
+        return;
+      }
+
+      if (message.type === 'skipped') {
+        realtimeFrameInFlightRef.current = false;
+        setRealtimeStatus('Frame dilewati agar antrean pemrosesan tidak menumpuk.');
+        return;
+      }
+
+      if (message.type === 'prediction') {
+        realtimeFrameInFlightRef.current = false;
+        setRealtimeFramesSeen(message.frames_seen);
+        setRealtimeFrameSize({
+          width: message.frame_width,
+          height: message.frame_height,
+        });
+        setRealtimePrediction(message.prediction);
+        if (message.stable_result) {
+          setRealtimeStableResult(message.stable_result.prediction);
+          setRealtimeStatus(
+            `Hasil ${message.stable_result.prediction.classification} stabil dan tersimpan; deteksi realtime berlanjut.`,
+          );
+        } else {
+          setRealtimeStatus(
+            `Realtime: ${message.prediction.classification} • frame ${message.frames_seen}`,
+          );
+        }
+        return;
+      }
+
+      realtimeFrameInFlightRef.current = false;
+      if (message.type === 'progress') {
+        if (typeof message.frames_seen === 'number') {
+          setRealtimeFramesSeen(message.frames_seen);
+        }
+        setRealtimeStatus(
+          `Menganalisis frame ${message.frames_ready}/${message.window_frames}...`,
+        );
+        return;
+      }
+
+      if (message.type === 'result') {
+        setDetectionResult(message.data.prediction);
+        setRealtimeStatus('Hasil deteksi tersimpan.');
+      }
+    };
+    socket.onerror = () => {
+      setRealtimeStatus('Koneksi realtime gagal. Periksa koneksi backend.');
+    };
+    socket.onclose = (event) => {
+      if (realtimeSocketRef.current === socket) {
+        realtimeSocketRef.current = null;
+      }
+      realtimeFrameInFlightRef.current = false;
+      if (realtimeIntervalRef.current !== null) {
+        window.clearInterval(realtimeIntervalRef.current);
+        realtimeIntervalRef.current = null;
+      }
+      realtimeActiveRef.current = false;
+      setIsRealtimeScanning(false);
+      if (event.code !== 1000) {
+        setRealtimeStatus(
+          event.reason || 'Koneksi realtime terputus sebelum hasil ditemukan.',
+        );
+      }
+    };
   };
 
   // Tangkap foto dari webcam
   const capturePhoto = useCallback(() => {
     if (webcamRef.current) {
+      stopRealtimeStream();
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         handleSetCapturedImage(imageSrc);
       }
     }
-  }, [webcamRef]);
+  }, [stopRealtimeStream]);
 
   // Ganti kamera depan / belakang
   const toggleCamera = () => {
+    stopRealtimeStream();
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   };
 
@@ -171,6 +354,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      stopRealtimeStream();
       const reader = new FileReader();
       reader.onloadend = () => {
         handleSetCapturedImage(reader.result as string);
@@ -506,6 +690,48 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                       <span>⚠️ Cahaya Terlalu Redup, Cari Tempat Terang</span>
                     </div>
                   </div>
+                {isRealtimeScanning && realtimePrediction && (
+                  <svg
+                    className="absolute inset-0 h-full w-full pointer-events-none"
+                    viewBox={`0 0 ${realtimeFrameSize.width} ${realtimeFrameSize.height}`}
+                    preserveAspectRatio="xMidYMid slice"
+                    role="img"
+                    aria-label="Bounding box deteksi realtime"
+                  >
+                    {realtimePrediction.boxes.map((box: any, index: number) => {
+                      const color = box.classification === 'early_blight'
+                        ? '#ef4444'
+                        : box.classification === 'healthy'
+                          ? '#22c55e'
+                          : '#f59e0b';
+                      const labelY = Math.max(18, box.y1 - 6);
+                      return (
+                        <g key={`${index}-${box.x1}-${box.y1}`}>
+                          <rect
+                            x={box.x1}
+                            y={box.y1}
+                            width={Math.max(0, box.x2 - box.x1)}
+                            height={Math.max(0, box.y2 - box.y1)}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth="3"
+                          />
+                          <text
+                            x={box.x1}
+                            y={labelY}
+                            fill={color}
+                            stroke="#111827"
+                            strokeWidth="0.8"
+                            paintOrder="stroke"
+                            fontSize="16"
+                            fontWeight="700"
+                          >
+                            {`${box.classification} ${box.confidence_pct.toFixed(1)}%`}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
                 )}
 
                 {/* Target Frame / Reticle di tengah kamera */}
@@ -541,7 +767,10 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                     </p>
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => {
+                        stopRealtimeStream();
+                        fileInputRef.current?.click();
+                      }}
                       className="py-2 px-4 bg-[#eb8e2d] hover:bg-[#d87f22] rounded-full text-white text-[12.5px] font-bold cursor-pointer mb-2.5 transition-all"
                     >
                       Pilih Foto dari Galeri
@@ -608,6 +837,45 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
+              </div>
+
+              <div className="w-full max-w-[350px] mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={
+                    isRealtimeScanning
+                      ? () => {
+                          stopRealtimeStream();
+                          setRealtimeStatus('Scan realtime dihentikan.');
+                        }
+                      : startRealtimeStream
+                  }
+                  disabled={hasPermission !== true}
+                  className={`w-full py-3 px-4 rounded-[18px] text-white font-bold text-[14px] shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isRealtimeScanning
+                      ? 'bg-[#752c2c] hover:bg-[#853434]'
+                      : 'bg-[#788944] hover:bg-[#68783b]'
+                  }`}
+                >
+                  {isRealtimeScanning
+                    ? 'Hentikan Scan Realtime'
+                    : 'Mulai Scan Realtime'}
+                </button>
+                {realtimeStatus && (
+                  <p className="mt-2 text-[12px] text-[#4b5563]" role="status">
+                    {realtimeStatus}
+                  </p>
+                )}
+                {realtimeStableResult && (
+                  <p className="mt-1 text-[11px] font-semibold text-[#52652f]">
+                    Tersimpan: {realtimeStableResult.classification}
+                  </p>
+                )}
+                {isRealtimeScanning && (
+                  <p className="mt-1 text-[11px] text-[#6b7280]">
+                    Frame terkirim: {realtimeFramesSeen}
+                  </p>
+                )}
               </div>
             </div>
           )}

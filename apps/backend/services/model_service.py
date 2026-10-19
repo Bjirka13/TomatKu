@@ -2,9 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
+import cv2
 import numpy as np
-
 from config import settings
+
+try:
+    import spaces
+except ImportError:
+    def _gpu_if_available(function: Any) -> Any:
+        return function
+else:
+    _gpu_if_available = spaces.GPU
 
 
 class ModelService:
@@ -24,14 +32,51 @@ class ModelService:
 
         return yolo_class(str(model_path))
 
+    @staticmethod
+    def filter_confident_boxes(
+        boxes: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        confidence_thresholds = {
+            "early_blight": settings.EARLY_BLIGHT_CONFIDENCE_THRESHOLD * 100,
+            "healthy": settings.HEALTHY_CONFIDENCE_THRESHOLD * 100,
+        }
+        return [
+            {
+                **box,
+                "confidence_pct": round(box["confidence_pct"], 2),
+            }
+            for box in boxes
+            if box["classification"] in confidence_thresholds
+            and box["confidence_pct"] >= confidence_thresholds[box["classification"]]
+        ]
+
+    @staticmethod
+    def select_prediction(
+        boxes: list[dict[str, Any]],
+    ) -> tuple[str, float, list[dict[str, Any]]]:
+        if not boxes:
+            return "unknown", 0.0, []
+
+        def box_priority(item: dict[str, Any]) -> tuple[int, float]:
+            is_disease = 1 if item["classification"] == "early_blight" else 0
+            return (is_disease, item["confidence_pct"])
+
+        best_box = max(boxes, key=box_priority)
+        return (
+            str(best_box["classification"]),
+            float(best_box["confidence_pct"]),
+            boxes,
+        )
+
+    @_gpu_if_available
     def predict(self, image: np.ndarray) -> tuple[str, float, list[dict[str, Any]]]:
         """Normalize model labels and return all boxes plus the strongest prediction."""
         import torch
 
         results = self.model.predict(
-            source=image,
+            source=cv2.cvtColor(image, cv2.COLOR_RGB2BGR),
             imgsz=640,
-            conf=0.45,
+            conf=settings.MODEL_INFERENCE_CONFIDENCE_THRESHOLD,
             iou=0.5,
             verbose=False,
             device=0 if torch.cuda.is_available() else "cpu",
@@ -62,28 +107,10 @@ class ModelService:
                     "x2": round(float(x2), 2),
                     "y2": round(float(y2), 2),
                     "classification": classification,
-                    "confidence_pct": round(confidence_pct, 2),
+                    "confidence_pct": confidence_pct,
                 })
 
-        if not boxes:
-            return "unknown", 0.0, []
-
-        # --- KODE LAMA (HANYA MENGAMBIL CONFIDENCE TERTINGGI) ---
-        # best_box = max(boxes, key=lambda item: item["confidence_pct"])
-        # ---------------------------------------------------------
-
-        # --- KODE BARU (MEMPRIORITAS KAN PENYAKIT JIKA TERDETEKSI) ---
-        def box_priority(item: dict[str, Any]) -> tuple[int, float]:
-            # Prioritize early_blight (1) over healthy/unknown (0)
-            is_disease = 1 if item["classification"] == "early_blight" else 0
-            return (is_disease, item["confidence_pct"])
-
-        best_box = max(boxes, key=box_priority)
-        return (
-            str(best_box["classification"]),
-            float(best_box["confidence_pct"]),
-            boxes,
-        )
+        return self.select_prediction(self.filter_confident_boxes(boxes))
 
 
 __all__ = ["ModelService"]
