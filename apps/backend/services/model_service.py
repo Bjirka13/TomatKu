@@ -6,6 +6,14 @@ import cv2
 import numpy as np
 from config import settings
 
+try:
+    import spaces
+except ImportError:
+    def _gpu_if_available(function: Any) -> Any:
+        return function
+else:
+    _gpu_if_available = spaces.GPU
+
 
 class ModelService:
     def __init__(self) -> None:
@@ -60,6 +68,7 @@ class ModelService:
             boxes,
         )
 
+    @_gpu_if_available
     def predict(self, image: np.ndarray) -> tuple[str, float, list[dict[str, Any]]]:
         """Normalize model labels and return all boxes plus the strongest prediction."""
         import torch
