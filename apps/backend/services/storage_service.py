@@ -36,14 +36,27 @@ class StorageService:
     def upload_image(self, payload: DetectionInput) -> UploadedImage:
         """Store each upload under a date/UUID path so existing objects are not replaced."""
         image = read_image_input(payload)
+        return self.upload_image_data(
+            image.data,
+            extension=image.extension,
+            content_type=image.content_type,
+        )
+
+    def upload_image_data(
+        self,
+        image_data: bytes,
+        extension: str,
+        content_type: str,
+    ) -> UploadedImage:
+        """Store generated image bytes, such as a representative video frame."""
         upload_date = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-        object_path = f"{upload_date}/{uuid4().hex}{image.extension}"
+        object_path = f"{upload_date}/{uuid4().hex}{extension}"
 
         self.client.storage.from_(self.bucket_name).upload(
             path=object_path,
-            file=image.data,
+            file=image_data,
             file_options={
-                "content-type": image.content_type,
+                "content-type": content_type,
                 "cache-control": "3600",
                 "upsert": "false",
             },
