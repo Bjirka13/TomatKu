@@ -1,3 +1,15 @@
+---
+title: TomatKU Backend
+emoji: 🍅
+colorFrom: green
+colorTo: yellow
+sdk: gradio
+sdk_version: 6.30.0
+python_version: "3.14"
+app_file: app.py
+pinned: false
+---
+
 # TomatKU Backend
 
 Backend FastAPI untuk mendeteksi kondisi daun tomat, menghitung tingkat keparahan, menyimpan gambar ke Supabase Storage, dan mencatat hasil scan ke PostgreSQL.
