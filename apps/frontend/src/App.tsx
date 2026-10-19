@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Landing from './landing';
 import PageOne from './pageone';
 import Home from './index';
@@ -7,10 +7,23 @@ import Summary from './summary';
 import History from './history';
 
 type PageState = 'landing' | 'pageone' | 'home' | 'camera' | 'summary' | 'history';
+const PAGE_STORAGE_KEY = 'tomatku.currentPage';
+const PAGE_STATES: PageState[] = ['landing', 'pageone', 'home', 'camera', 'summary', 'history'];
+
+function getInitialPage(): PageState {
+  const savedPage = window.sessionStorage.getItem(PAGE_STORAGE_KEY);
+  return PAGE_STATES.includes(savedPage as PageState)
+    ? (savedPage as PageState)
+    : 'landing';
+}
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<PageState>('landing');
+  const [currentPage, setCurrentPage] = useState<PageState>(getInitialPage);
   const [previousPage, setPreviousPage] = useState<PageState>('home');
+
+  useEffect(() => {
+    window.sessionStorage.setItem(PAGE_STORAGE_KEY, currentPage);
+  }, [currentPage]);
 
   const handleNavigate = (tab: PageState) => {
     if (tab !== currentPage) {

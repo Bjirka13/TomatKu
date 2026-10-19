@@ -11,11 +11,11 @@ export interface ScanRecord {
   detected_at: string | null;
 }
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+export const API_BASE_URL = 'https://loop12-tomatku-be.hf.space';
 
 export async function fetchScanHistory(): Promise<ScanRecord[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/history`);
+    const res = await fetch(`${API_BASE_URL}/api/history`);
     if (!res.ok) throw new Error('Network error');
     const json = await res.json();
     return json.data || [];
@@ -88,12 +88,12 @@ export async function getStatsForDateReal(dateObj: Date): Promise<any> {
     };
 }
 
-export async function getPeriodStatsReal(period: 'hari' | 'minggu' | 'bulan' | 'custom', customDate?: Date): Promise<any> {
+export async function getPeriodStatsReal(period: 'semua' | 'hari' | 'minggu' | 'bulan' | 'custom', customDate?: Date): Promise<any> {
     const history = await fetchScanHistory();
     const now = new Date();
     
     let filtered = history;
-    let label = '';
+    let label = period === 'semua' ? 'Semua data' : '';
     
     if (period === 'hari') {
         const todayStr = toISODateString(now);

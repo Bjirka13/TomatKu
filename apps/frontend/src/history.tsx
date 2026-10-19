@@ -22,6 +22,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
     totalScan: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
+    unknownPercent: 0,
     severityCounts: { ringan: 0, sedang: 0, parah: 0 },
     needleAngle: 0,
   });

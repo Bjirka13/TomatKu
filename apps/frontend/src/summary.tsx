@@ -7,7 +7,7 @@ interface SummaryProps {
   activeTab?: 'home' | 'camera' | 'summary';
 }
 
-type Period = 'hari' | 'minggu' | 'bulan';
+type Period = 'semua' | 'hari' | 'minggu' | 'bulan';
 
 interface RecommendationItem {
   id: number;
@@ -53,12 +53,13 @@ const earlyBlightRecommendations: RecommendationItem[] = [
 ];
 
 export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>('hari');
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>('semua');
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
   const [currentStats, setCurrentStats] = useState({
     totalScan: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
+    unknownPercent: 0,
     severityCounts: { ringan: 0, sedang: 0, parah: 0 },
     needleAngle: 0,
     label: ''
@@ -196,6 +197,18 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
 
           {/* Time Filter Buttons + Calendar */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedPeriod('semua')}
+              className={`flex-1 py-2 px-3 rounded-[12px] font-semibold text-[13px] transition-all cursor-pointer text-center ${
+                selectedPeriod === 'semua'
+                  ? 'bg-[#eb8e2d] text-white shadow-sm'
+                  : 'bg-[#838891] text-white/90 hover:bg-[#777c86]'
+              }`}
+            >
+              Semua
+            </button>
+
             <button
               type="button"
               onClick={() => setSelectedPeriod('hari')}

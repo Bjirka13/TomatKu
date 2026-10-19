@@ -4,9 +4,28 @@ CREATE TABLE IF NOT EXISTS scans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     ended_at TIMESTAMPTZ,
+    detection_mode TEXT NOT NULL DEFAULT 'capture',
+    stream_id TEXT,
     CONSTRAINT scans_ended_at_after_started_at
         CHECK (ended_at IS NULL OR ended_at >= started_at)
 );
+
+ALTER TABLE scans
+    ADD COLUMN IF NOT EXISTS detection_mode TEXT NOT NULL DEFAULT 'capture',
+    ADD COLUMN IF NOT EXISTS stream_id TEXT;
+
+ALTER TABLE scans
+    DROP CONSTRAINT IF EXISTS scans_mode_valid,
+    DROP CONSTRAINT IF EXISTS scans_stream_valid;
+
+ALTER TABLE scans
+    ADD CONSTRAINT scans_mode_valid
+        CHECK (detection_mode IN ('capture', 'realtime')),
+    ADD CONSTRAINT scans_stream_valid
+        CHECK (
+            (detection_mode = 'capture' AND stream_id IS NULL)
+            OR (detection_mode = 'realtime' AND stream_id IS NOT NULL AND btrim(stream_id) <> '')
+        );
 
 CREATE TABLE IF NOT EXISTS detection_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,10 +88,10 @@ ALTER TABLE detection_logs
         ),
     ADD CONSTRAINT detection_logs_classification_severity_valid
         CHECK (
-            (classification = 'healthy'
+            (classification IN ('healthy', 'unknown')
              AND severity_level IS NULL
              AND severity_pct IS NULL)
-            OR (classification <> 'healthy'
+            OR (classification = 'early_blight'
                 AND severity_level IS NOT NULL
                 AND severity_pct IS NOT NULL)
         );

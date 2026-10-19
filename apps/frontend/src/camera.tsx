@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import Webcam from 'react-webcam';
+import { API_BASE_URL } from './utils/api';
 import './index.css';
 
 interface CameraProps {
@@ -99,10 +100,9 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
     setIsRealtimeScanning(true);
     realtimeActiveRef.current = true;
 
-    const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(
-      `${socketProtocol}//${window.location.hostname}:8000/api/detect/realtime/stream`,
-    );
+    const socketUrl = new URL(`${API_BASE_URL}/api/detect/realtime/stream`);
+    socketUrl.protocol = 'wss:';
+    const socket = new WebSocket(socketUrl);
     realtimeSocketRef.current = socket;
 
     socket.onopen = () => {
@@ -269,7 +269,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
     if (!capturedImage) return;
     setIsScanning(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/detect', {
+      const response = await fetch(`${API_BASE_URL}/api/detect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
