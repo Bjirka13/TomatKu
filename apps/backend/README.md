@@ -44,6 +44,12 @@ Copy-Item .env.example .env
 ```
 ### Setup Database
 
+`DATABASE_URL` menentukan database yang dipakai backend. Untuk mencoba sepenuhnya di
+komputer sendiri, biarkan nilainya mengarah ke PostgreSQL lokal seperti contoh di
+`.env.example`. Untuk menjalankan backend lokal tetapi memakai database Supabase,
+gunakan connection string PostgreSQL Supabase sebagai `DATABASE_URL` saat menjalankan
+backend. Jangan commit connection string atau password.
+
 ```powershell
 psql -h localhost -p 5432 -U postgres -d postgres -c "CREATE DATABASE tomatku;"
 ```
@@ -75,6 +81,63 @@ Invoke-RestMethod http://localhost:8000/health
 ```
 
 Dokumentasi API tersedia di `http://localhost:8000/docs`.
+
+### Menjalankan backend lokal dengan database Supabase
+
+Project Supabase menyediakan PostgreSQL selain Storage. Ambil connection string dari
+**Connect → Session pooler**. Backend hanya membaca `DATABASE_URL`; variabel
+`SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` dipakai khusus untuk Storage.
+
+Untuk PowerShell, set URL hanya pada jendela terminal saat ini, lalu jalankan backend:
+
+```powershell
+$env:DATABASE_URL = "postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/postgres"
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Untuk CMD, gunakan `set "DATABASE_URL=postgresql://..."` sebelum menjalankan Uvicorn.
+Environment dari terminal akan mengesampingkan `DATABASE_URL` di `.env`.
+
+```cmd
+set /p DATABASE_URL=Tempel connection string Supabase:
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Migrasi data dari PostgreSQL lokal ke Supabase
+
+Jalankan dari folder `apps/backend`. Pastikan connection string sumber menunjuk ke
+database lokal dan connection string tujuan berasal dari **Connect → Session pooler**.
+Perintah berikut membuat tabel aplikasi di Supabase, mengekspor isi dua tabel TomatKU,
+lalu mengimpornya. Jalankan impor hanya jika tabel tujuan masih kosong agar data tidak
+terduplikasi. Untuk PowerShell:
+
+```powershell
+$env:SOURCE_DB_URL = "postgresql://postgres:[PASSWORD]@localhost:5432/tomatku"
+$env:SUPABASE_DB_URL = "postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/postgres"
+
+psql "$env:SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f database/init.sql
+pg_dump "$env:SOURCE_DB_URL" --data-only --no-owner --no-privileges `
+  --table=public.scans --table=public.detection_logs `
+  --file="$env:TEMP\tomatku-data.sql"
+psql "$env:SUPABASE_DB_URL" --set ON_ERROR_STOP=1 `
+  --file="$env:TEMP\tomatku-data.sql"
+```
+
+Untuk CMD, jalankan dari folder `apps\backend`, isi kedua URL di terminal yang sama,
+lalu jalankan perintah ini:
+
+```cmd
+set /p SOURCE_DB_URL=Tempel connection string database lokal dari backend\.env:
+set /p SUPABASE_DB_URL=Tempel connection string Supabase:
+
+psql "%SUPABASE_DB_URL%" -v ON_ERROR_STOP=1 -f database\init.sql
+pg_dump "%SOURCE_DB_URL%" --data-only --no-owner --no-privileges --table=public.scans --table=public.detection_logs --file="%TEMP%\tomatku-data.sql"
+psql "%SUPABASE_DB_URL%" --set ON_ERROR_STOP=1 --file="%TEMP%\tomatku-data.sql"
+```
+
+Sesudah impor, bandingkan jumlah baris `scans` dan `detection_logs` di kedua database.
+File gambar lokal tidak ikut dalam dump SQL; unggah terpisah ke Supabase Storage dan
+perbarui `image_path` jika path-nya berubah.
 
 
 ## API Reference
