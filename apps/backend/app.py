@@ -10,7 +10,9 @@ from main import app as fastapi_app
 
 @fastapi_app.get("/", include_in_schema=False)
 async def gradio_root():
-    return RedirectResponse(url="/gradio/")
+    # Keep redirects relative so Hugging Face's /spaces/<owner>/<name> proxy
+    # prefix is preserved when the Space is opened from its Hub page.
+    return RedirectResponse(url="gradio/")
 
 
 gradio_demo = gr.Interface(
