@@ -4,7 +4,7 @@ fastapi==0.136.3
 numpy==2.4.6
 opencv-python==5.0.0.93
 psycopg2-binary==2.9.13
-pydantic==2.13.4
+pydantic==2.12.5
 python-multipart==0.0.32
 supabase==2.31.0
 torch==2.13.0
