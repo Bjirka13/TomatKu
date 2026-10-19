@@ -22,7 +22,7 @@ gradio_demo = gr.Interface(
 app = gr.mount_gradio_app(
     fastapi_app,
     gradio_demo,
-    path="/gradio",
+    path="/",
     ssr_mode=False,
 )
 
