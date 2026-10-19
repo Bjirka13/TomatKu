@@ -2,9 +2,15 @@
 
 import gradio as gr
 import uvicorn
+from fastapi.responses import RedirectResponse
 
 from api.routes.predict import service
 from main import app as fastapi_app
+
+
+@fastapi_app.get("/", include_in_schema=False)
+async def gradio_root():
+    return RedirectResponse(url="/gradio/")
 
 
 gradio_demo = gr.Interface(
@@ -22,7 +28,7 @@ gradio_demo = gr.Interface(
 app = gr.mount_gradio_app(
     fastapi_app,
     gradio_demo,
-    path="/",
+    path="/gradio",
     ssr_mode=False,
 )
 
