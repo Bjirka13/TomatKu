@@ -49,7 +49,23 @@ class DetectionRepository:
         return str(result[0]["id"])
 
     def get_scan_history(self) -> list[dict[str, Any]]:
-        """Keep scans without detections in history, with their detection fields empty."""
+        # --- KODE LAMA (LEFT JOIN DENGAN SCAN KOSONG / NULL) ---
+        # query = """
+        #     SELECT s.id AS scan_id,
+        #            d.id AS detection_id,
+        #            d.classification,
+        #            d.confidence_pct,
+        #            d.image_path,
+        #            d.severity_level,
+        #            d.severity_pct,
+        #            d.detected_at
+        #     FROM scans s
+        #     LEFT JOIN detection_logs d ON d.scan_id = s.id
+        #     ORDER BY d.detected_at DESC NULLS LAST;
+        # """
+        # -------------------------------------------------------
+
+        # --- KODE BARU (INNER JOIN, HANYA AMBIL DETEKSI YANG VALID) ---
         query = """
             SELECT s.id AS scan_id,
                    d.id AS detection_id,
@@ -60,7 +76,8 @@ class DetectionRepository:
                    d.severity_pct,
                    d.detected_at
             FROM scans s
-            LEFT JOIN detection_logs d ON d.scan_id = s.id
-            ORDER BY d.detected_at DESC NULLS LAST;
+            INNER JOIN detection_logs d ON d.scan_id = s.id
+            WHERE d.classification IN ('healthy', 'early_blight')
+            ORDER BY d.detected_at DESC;
         """
         return self.connection.execute(query, fetch=True) or []

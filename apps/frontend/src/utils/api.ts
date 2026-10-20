@@ -25,6 +25,8 @@ export async function fetchScanHistory(): Promise<ScanRecord[]> {
   }
 }
 
+// --- KODE LAMA (MENGHITUNG SEMUA RECORD TERMASUK NULL/UNKNOWN) ---
+/*
 export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyPercent: number, earlyBlightPercent: number, unknownPercent: number, severityCounts: { ringan: number, sedang: number, parah: number }, needleAngle: number } {
   const totalScan = records.length;
   if (totalScan === 0) {
@@ -68,6 +70,53 @@ export function calculateStats(records: ScanRecord[]): { totalScan: number, heal
     needleAngle,
   };
 }
+*/
+// -----------------------------------------------------------------
+
+// --- KODE BARU (MEMBUANG DATA NULL/UNKNOWN DARI PERHITUNGAN) ---
+export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyPercent: number, earlyBlightPercent: number, unknownPercent: number, severityCounts: { ringan: number, sedang: number, parah: number }, needleAngle: number } {
+  // Hanya ambil data yang memiliki klasifikasi valid (bukan null dan bukan unknown)
+  const validRecords = records.filter(r => r.classification === 'healthy' || r.classification === 'early_blight');
+  const totalScan = validRecords.length;
+
+  if (totalScan === 0) {
+    return { totalScan: 0, healthyPercent: 0, earlyBlightPercent: 0, unknownPercent: 0, severityCounts: { ringan: 0, sedang: 0, parah: 0 }, needleAngle: 0 };
+  }
+  
+  let healthyCount = 0;
+  let earlyBlightCount = 0;
+  let ringanCount = 0;
+  let sedangCount = 0;
+  let parahCount = 0;
+  
+  validRecords.forEach(r => {
+    if (r.classification === 'healthy') {
+      healthyCount++;
+    } else if (r.classification === 'early_blight') {
+      earlyBlightCount++;
+    }
+
+    if (r.severity_level === 'ringan') ringanCount++;
+    else if (r.severity_level === 'sedang') sedangCount++;
+    else if (r.severity_level === 'parah') parahCount++;
+  });
+
+  const healthyPercent = Math.round((healthyCount / totalScan) * 100);
+  const earlyBlightPercent = 100 - healthyPercent; // Menjamin persentase selalu bulat 100% tanpa celah
+  const unknownPercent = 0;
+  
+  const healthDiff = (healthyPercent - earlyBlightPercent) / 100;
+  const needleAngle = Math.max(-75, Math.min(75, Math.round(healthDiff * 75))); 
+
+  return {
+    totalScan,
+    healthyPercent,
+    earlyBlightPercent,
+    unknownPercent,
+    severityCounts: { ringan: ringanCount, sedang: sedangCount, parah: parahCount },
+    needleAngle,
+  };
+}
 
 export async function getStatsForDateReal(dateObj: Date): Promise<any> {
     const history = await fetchScanHistory();
@@ -92,7 +141,11 @@ export async function getPeriodStatsReal(period: 'semua' | 'hari' | 'minggu' | '
     const history = await fetchScanHistory();
     const now = new Date();
     
-    let filtered = history;
+    // --- KODE LAMA (MEMASUKKAN SEMUA DATA TERMASUK NULL/UNKNOWN) ---
+    // let filtered = history;
+    // -------------------------------------------------------------
+    // --- KODE BARU (HANYA MENGAMBIL DATA DETEKSI VALID) ---
+    let filtered = history.filter(r => r.classification === 'healthy' || r.classification === 'early_blight');
     let label = period === 'semua' ? 'Semua data' : '';
     
     if (period === 'hari') {

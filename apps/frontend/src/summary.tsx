@@ -5,6 +5,8 @@ import { getPeriodStatsReal } from './utils/api';
 interface SummaryProps {
   onNavigate?: (tab: 'home' | 'camera' | 'summary' | 'history') => void;
   activeTab?: 'home' | 'camera' | 'summary';
+  previousPage?: string;
+  initialPeriod?: Period;
 }
 
 type Period = 'semua' | 'hari' | 'minggu' | 'bulan';
@@ -52,14 +54,25 @@ const earlyBlightRecommendations: RecommendationItem[] = [
   },
 ];
 
-export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>('semua');
+export default function Summary({ 
+  onNavigate, 
+  activeTab = 'summary',
+  previousPage,
+  initialPeriod = 'hari',
+}: SummaryProps) {
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>(initialPeriod);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (previousPage === 'camera') {
+      setSelectedPeriod('hari');
+    }
+  }, [previousPage]);
   const [currentStats, setCurrentStats] = useState({
     totalScan: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
-    unknownPercent: 0,
+    // unknownPercent: 0,
     severityCounts: { ringan: 0, sedang: 0, parah: 0 },
     needleAngle: 0,
     label: ''
@@ -80,7 +93,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
   const circumference = 2 * Math.PI * radius; // ~452.39
   const healthyStroke = (currentStats.healthyPercent / 100) * circumference;
   const earlyBlightStroke = (currentStats.earlyBlightPercent / 100) * circumference;
-  const unknownStroke = (currentStats.unknownPercent / 100) * circumference;
+  // const unknownStroke = (currentStats.unknownPercent / 100) * circumference;
 
   const totalSick = currentStats.severityCounts.ringan + currentStats.severityCounts.sedang + currentStats.severityCounts.parah;
   const maxBar = Math.max(1, totalSick);
@@ -367,10 +380,10 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                 <span className="w-2.5 h-2.5 rounded-full bg-[#782c2c]" />
                 <span>Early Blight</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              {/* <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#9ca3af]" />
                 <span>Unknown</span>
-              </div>
+              </div> */}
             </div>
 
             {/* Donut Chart with Surrounding Labels */}
@@ -406,7 +419,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                   />
 
                   {/* Segment 3: Unknown - Gray */}
-                  <circle
+                  {/* <circle
                     cx="120"
                     cy="120"
                     r={radius}
@@ -416,7 +429,7 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                     strokeDasharray={`${unknownStroke} ${circumference}`}
                     strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
                     className="transition-all duration-700 ease-out"
-                  />
+                  /> */}
                 </g>
 
                 {/* Donut Center Label */}
@@ -460,14 +473,14 @@ export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryPr
                 </span>
               </div>
               {/* Label Unknown (Top-Left) */}
-              <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
+              {/* <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
                   Unknown
                 </span>
                 <span className="block text-[10px] font-medium text-[#4b5563]">
                   {currentStats.unknownPercent}%
                 </span>
-              </div>
+              </div> */}
             </div>
           </div>
 

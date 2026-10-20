@@ -105,7 +105,7 @@ export default function App() {
 
       {/* Summary Page */}
       {currentPage === 'summary' && (
-        <Summary onNavigate={handleNavigate} activeTab="summary" />
+        <Summary onNavigate={handleNavigate} activeTab="summary" previousPage={previousPage} />
       )}
 
       {/* History Page */}
