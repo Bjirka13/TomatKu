@@ -30,6 +30,13 @@ body {
   overflow-x: hidden;
 }
 
+#root {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+}
+
 /* Custom text-stroke effect for TomatKU header */
 .text-stroke-title {
   -webkit-text-stroke: 3.5px #ffffff;

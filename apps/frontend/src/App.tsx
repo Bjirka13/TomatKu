@@ -33,7 +33,7 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen flex justify-center bg-[#ede6d9]">
+    <div className="w-full min-h-[100dvh] h-[100dvh] flex justify-center bg-[#ede6d9] overflow-hidden">
       {/* Quick dev switch banner to jump between Landing & Home */}
       {/* <div
         style={{

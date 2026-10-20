@@ -401,8 +401,8 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   };
 
   return (
-    <div className="w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 sm:p-4">
-      <main className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col sm:rounded-[36px] sm:shadow-2xl relative overflow-hidden">
+    <div className="w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4">
+      <main className="w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col md:rounded-[36px] md:shadow-2xl relative overflow-hidden">
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col justify-between">
           {/* Modal Tutorial (Muncul Pertama Kali) */}
@@ -887,7 +887,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
 
         {/* Fixed Bottom Navigation Bar */}
         <nav
-          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-5 max-sm:pb-[calc(16px+env(safe-area-inset-bottom,0px))] flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
+          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:pb-5 flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
           aria-label="Navigasi Utama"
         >
           <button

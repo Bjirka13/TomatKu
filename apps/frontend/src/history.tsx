@@ -156,8 +156,8 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
   };
 
   return (
-    <div className="w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 sm:p-4">
-      <main className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col sm:rounded-[36px] sm:shadow-2xl relative overflow-hidden">
+    <div className="w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4">
+      <main className="w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col md:rounded-[36px] md:shadow-2xl relative overflow-hidden">
         
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
@@ -400,100 +400,80 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
             </div>
 
             {/* Donut Chart with Surrounding Labels */}
-            <div className="relative w-full max-w-[290px] mx-auto aspect-square flex items-center justify-center">
-              
-              {/* SVG Donut */}
-              <svg className="w-full h-full" viewBox="0 0 240 240">
-                <g transform="rotate(-90 120 120)">
-                  {/* Segment 1: Healthy - Olive Green */}
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke="#788e40"
-                    strokeWidth="32"
-                    strokeDasharray={`${healthyStroke} ${circumference}`}
-                    strokeDashoffset="0"
-                    className="transition-all duration-700 ease-out"
-                  />
-
-                  {/* Segment 2: Early Blight - Dark Maroon/Brown */}
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke="#782c2c"
-                    strokeWidth="32"
-                    strokeDasharray={`${earlyBlightStroke} ${circumference}`}
-                    strokeDashoffset={`-${healthyStroke}`}
-                    className="transition-all duration-700 ease-out"
-                  />
-
-                  {/* Segment 3: Unknown - Gray */}
-                  {/* <circle
-                    cx="120"
-                    cy="120"
-                    r={radius}
-                    fill="none"
-                    stroke="#9ca3af"
-                    strokeWidth="32"
-                    strokeDasharray={`${unknownStroke} ${circumference}`}
-                    strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
-                    className="transition-all duration-700 ease-out"
-                  /> */}
-                </g>
-
-                {/* Donut Center Label */}
-                <text
-                  x="120"
-                  y="118"
-                  textAnchor="middle"
-                  className="font-['Poppins'] font-black text-[32px] fill-[#22252a]"
-                >
-                  {currentRecord.totalScan}
-                </text>
-                <text
-                  x="120"
-                  y="136"
-                  textAnchor="middle"
-                  className="font-bold text-[10px] fill-[#6b7280] tracking-wider uppercase"
-                >
-                  TOTAL SCAN
-                </text>
-              </svg>
-
-              {/* Floating Labels outside Donut */}
-
-              {/* Label Early Blight (Left) */}
-              <div className="absolute top-[48%] -translate-y-1/2 left-[-12%] text-center pointer-events-none">
-                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
-                  Early Blight
+            <div className="relative w-full py-2 flex items-center justify-center">
+              {/* Label Early Blight (Left - Atas Bawah) */}
+              <div className="absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 text-center pointer-events-none">
+                <span className="block text-[11px] font-bold text-[#782c2c] leading-tight">
+                  Early
                 </span>
-                <span className="block text-[10px] font-medium text-[#4b5563]">
+                <span className="block text-[11px] font-bold text-[#782c2c] leading-tight">
+                  Blight
+                </span>
+                <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
                   {currentRecord.earlyBlightPercent}%
                 </span>
               </div>
 
-              {/* Label Healthy (Right/Bottom-Right) */}
-              <div className="absolute top-[52%] -translate-y-1/2 right-[-7%] text-center pointer-events-none">
-                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
+              {/* SVG Donut */}
+              <div className="w-[176px] h-[176px] sm:w-[190px] sm:h-[190px]">
+                <svg className="w-full h-full" viewBox="0 0 240 240">
+                  <g transform="rotate(-90 120 120)">
+                    {/* Segment 1: Healthy - Olive Green */}
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r={radius}
+                      fill="none"
+                      stroke="#788e40"
+                      strokeWidth="32"
+                      strokeDasharray={`${healthyStroke} ${circumference}`}
+                      strokeDashoffset="0"
+                      className="transition-all duration-700 ease-out"
+                    />
+
+                    {/* Segment 2: Early Blight - Dark Maroon/Brown */}
+                    <circle
+                      cx="120"
+                      cy="120"
+                      r={radius}
+                      fill="none"
+                      stroke="#782c2c"
+                      strokeWidth="32"
+                      strokeDasharray={`${earlyBlightStroke} ${circumference}`}
+                      strokeDashoffset={`-${healthyStroke}`}
+                      className="transition-all duration-700 ease-out"
+                    />
+                  </g>
+
+                  {/* Donut Center Label */}
+                  <text
+                    x="120"
+                    y="118"
+                    textAnchor="middle"
+                    className="font-['Poppins'] font-black text-[32px] fill-[#22252a]"
+                  >
+                    {currentRecord.totalScan}
+                  </text>
+                  <text
+                    x="120"
+                    y="136"
+                    textAnchor="middle"
+                    className="font-bold text-[10px] fill-[#6b7280] tracking-wider uppercase"
+                  >
+                    TOTAL SCAN
+                  </text>
+                </svg>
+              </div>
+
+              {/* Label Healthy (Right) */}
+              <div className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 text-center pointer-events-none">
+                <span className="block text-[11px] font-bold text-[#788e40] leading-tight">
                   Healthy
                 </span>
-                <span className="block text-[10px] font-medium text-[#4b5563]">
+                <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
                   {currentRecord.healthyPercent}%
                 </span>
               </div>
-              {/* Label Unknown (Top-Left) */}
-              {/* <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
-                <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
-                  Unknown
-                </span>
-                <span className="block text-[10px] font-medium text-[#4b5563]">
-                  {currentRecord.unknownPercent}%
-                </span>
-              </div> */}
             </div>
           </div>
 
@@ -556,7 +536,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
 
         {/* Fixed Bottom Navigation Bar */}
         <nav
-          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-5 max-sm:pb-[calc(16px+env(safe-area-inset-bottom,0px))] flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
+          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:pb-5 flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
           aria-label="Navigasi Utama"
         >
           <button
@@ -591,11 +571,11 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
         {/* Calendar Modal */}
         {isCalendarOpen && (
           <div
-            className="absolute inset-0 z-50 bg-black/55 backdrop-blur-[2px] flex flex-col justify-end sm:justify-center p-0 sm:p-4 transition-all duration-300"
+            className="absolute inset-0 z-50 bg-black/55 backdrop-blur-[2px] flex flex-col justify-end md:justify-center p-0 md:p-4 transition-all duration-300"
             onClick={() => setIsCalendarOpen(false)}
           >
             <div
-              className="w-full bg-[#fdfbf7] rounded-t-[32px] sm:rounded-[28px] p-5 shadow-2xl flex flex-col border border-orange-100/50"
+              className="w-full bg-[#fdfbf7] rounded-t-[32px] md:rounded-[28px] p-5 shadow-2xl flex flex-col border border-orange-100/50"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
