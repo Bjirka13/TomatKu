@@ -5,6 +5,8 @@ import { getPeriodStatsReal } from './utils/api';
 interface SummaryProps {
   onNavigate?: (tab: 'home' | 'camera' | 'summary' | 'history') => void;
   activeTab?: 'home' | 'camera' | 'summary';
+  previousPage?: string;
+  initialPeriod?: Period;
 }
 
 type Period = 'semua' | 'hari' | 'minggu' | 'bulan';
@@ -52,9 +54,20 @@ const earlyBlightRecommendations: RecommendationItem[] = [
   },
 ];
 
-export default function Summary({ onNavigate, activeTab = 'summary' }: SummaryProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>('semua');
+export default function Summary({ 
+  onNavigate, 
+  activeTab = 'summary',
+  previousPage,
+  initialPeriod = 'hari',
+}: SummaryProps) {
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>(initialPeriod);
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (previousPage === 'camera') {
+      setSelectedPeriod('hari');
+    }
+  }, [previousPage]);
   const [currentStats, setCurrentStats] = useState({
     totalScan: 0,
     healthyPercent: 0,
