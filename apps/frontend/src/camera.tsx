@@ -161,6 +161,8 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
       isTooDark: result.isTooDark,
       isTooBright: result.isTooBright,
     });
+  };
+
   const stopRealtimeStream = useCallback(() => {
     realtimeActiveRef.current = false;
     realtimeFrameInFlightRef.current = false;
@@ -690,6 +692,8 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                       <span>⚠️ Cahaya Terlalu Redup, Cari Tempat Terang</span>
                     </div>
                   </div>
+                 )}
+
                 {isRealtimeScanning && realtimePrediction && (
                   <svg
                     className="absolute inset-0 h-full w-full pointer-events-none"

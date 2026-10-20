@@ -22,7 +22,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
     totalScan: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
-    unknownPercent: 0,
+    // unknownPercent: 0,
     severityCounts: { ringan: 0, sedang: 0, parah: 0 },
     needleAngle: 0,
   });
@@ -138,7 +138,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
   const circumference = 2 * Math.PI * radius;
   const healthyStroke = (currentRecord.healthyPercent / 100) * circumference;
   const earlyBlightStroke = (currentRecord.earlyBlightPercent / 100) * circumference;
-  const unknownStroke = (currentRecord.unknownPercent / 100) * circumference;
+  // const unknownStroke = (currentRecord.unknownPercent / 100) * circumference;
 
   const totalSick = currentRecord.severityCounts.ringan + currentRecord.severityCounts.sedang + currentRecord.severityCounts.parah;
   const maxBar = Math.max(1, totalSick);
@@ -393,10 +393,10 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                 <span className="w-2.5 h-2.5 rounded-full bg-[#782c2c]" />
                 <span>Early Blight</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              {/* <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#9ca3af]" />
                 <span>Unknown</span>
-              </div>
+              </div> */}
             </div>
 
             {/* Donut Chart with Surrounding Labels */}
@@ -432,7 +432,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                   />
 
                   {/* Segment 3: Unknown - Gray */}
-                  <circle
+                  {/* <circle
                     cx="120"
                     cy="120"
                     r={radius}
@@ -442,7 +442,7 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                     strokeDasharray={`${unknownStroke} ${circumference}`}
                     strokeDashoffset={`-${healthyStroke + earlyBlightStroke}`}
                     className="transition-all duration-700 ease-out"
-                  />
+                  /> */}
                 </g>
 
                 {/* Donut Center Label */}
@@ -486,14 +486,14 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                 </span>
               </div>
               {/* Label Unknown (Top-Left) */}
-              <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
+              {/* <div className="absolute top-[12%] left-[0%] text-center pointer-events-none">
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] leading-tight">
                   Unknown
                 </span>
                 <span className="block text-[10px] font-medium text-[#4b5563]">
                   {currentRecord.unknownPercent}%
                 </span>
-              </div>
+              </div> */}
             </div>
           </div>
 
