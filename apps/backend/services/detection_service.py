@@ -18,6 +18,24 @@ from services.severity_service import SeverityService
 from services.storage_service import StorageService
 
 
+class UnstableDetectionError(ValueError):
+    """Raised when detection across video or stream frames is unstable."""
+
+    def __init__(
+        self,
+        message: str = "Detection is unstable across frames",
+        matching_frames: int = 0,
+        total_frames: int = 0,
+        required_frames: int = 0,
+        classification: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.matching_frames = matching_frames
+        self.total_frames = total_frames
+        self.required_frames = required_frames
+        self.classification = classification
+
+
 class DetectionService:
     def __init__(
         self,
@@ -162,5 +180,59 @@ class DetectionService:
 
         return {"prediction": prediction.model_dump(), **saved}
 
+    def _predict_from_rgb_frame(self, frame_rgb: np.ndarray) -> DetectionResult:
+        """Run prediction and severity analysis on a raw RGB frame."""
+        classification, confidence_pct, boxes = self.model_service.predict(frame_rgb)
+        best_box = max(
+            boxes,
+            key=lambda item: item["confidence_pct"],
+            default=None,
+        )
+        bounding_box = (
+            None
+            if best_box is None
+            else (
+                best_box["x1"],
+                best_box["y1"],
+                best_box["x2"],
+                best_box["y2"],
+            )
+        )
+        raw_result = self.severity_service.analyze(
+            frame_rgb,
+            classification,
+            bounding_box=bounding_box,
+        )
+        return self._normalize_model_output(
+            raw_result,
+            classification,
+            confidence_pct,
+            boxes,
+        )
 
-__all__ = ["DetectionService"]
+    def evaluate_realtime_window(
+        self,
+        recent_frames: list[np.ndarray],
+        recent_predictions: list[DetectionResult],
+        window_start_frame: int = 0,
+        total_frames_seen: int = 0,
+    ) -> dict[str, Any] | None:
+        """Evaluate a window of recent frames from the realtime camera stream."""
+        if not recent_predictions:
+            return None
+        best_pred = max(recent_predictions, key=lambda p: p.confidence_pct)
+        return {"prediction": best_pred.model_dump(), "saved": False}
+
+    def process_video(self, video_data: bytes, filename: str) -> dict[str, Any]:
+        """Process an uploaded video by sampling frames."""
+        from services.image_input import read_video_frames
+
+        frames = read_video_frames(video_data, filename)
+        if not frames:
+            raise ValueError("No valid frames could be decoded from video")
+        preds = [self._predict_from_rgb_frame(f) for f in frames]
+        best_pred = max(preds, key=lambda p: p.confidence_pct)
+        return {"prediction": best_pred.model_dump(), "saved": False}
+
+
+__all__ = ["DetectionService", "UnstableDetectionError"]
