@@ -37,6 +37,7 @@ if spaces is not None:
 
 
 gradio_demo = gr.Interface(
+    # fn=service.model_service.predict,
     fn=predict_fn,
     inputs=gr.Image(type="numpy", label="Leaf image"),
     outputs=[
