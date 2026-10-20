@@ -692,6 +692,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                       <span>⚠️ Cahaya Terlalu Redup, Cari Tempat Terang</span>
                     </div>
                   </div>
+                 )}
                 {isRealtimeScanning && realtimePrediction && (
                   <svg
                     className="absolute inset-0 h-full w-full pointer-events-none"
