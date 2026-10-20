@@ -6,6 +6,20 @@ import numpy as np
 
 from config import settings
 
+try:
+    import spaces
+except ImportError:
+    spaces = None
+
+
+def maybe_gpu(fn: Any) -> Any:
+    if spaces is not None:
+        try:
+            return spaces.GPU(fn)
+        except Exception:
+            return fn
+    return fn
+
 
 class ModelService:
     def __init__(self) -> None:
@@ -24,6 +38,7 @@ class ModelService:
 
         return yolo_class(str(model_path))
 
+    @maybe_gpu
     def predict(self, image: np.ndarray) -> tuple[str, float, list[dict[str, Any]]]:
         """Normalize model labels and return all boxes plus the strongest prediction."""
         import torch

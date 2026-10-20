@@ -19,8 +19,25 @@ async def gradio_root(request: Request):
     return RedirectResponse(url=target)
 
 
+try:
+    import spaces
+except ImportError:
+    spaces = None
+
+
+def predict_fn(image):
+    return service.model_service.predict(image)
+
+
+if spaces is not None:
+    try:
+        predict_fn = spaces.GPU(predict_fn)
+    except Exception:
+        pass
+
+
 gradio_demo = gr.Interface(
-    fn=service.model_service.predict,
+    fn=predict_fn,
     inputs=gr.Image(type="numpy", label="Leaf image"),
     outputs=[
         gr.Textbox(label="Classification"),
@@ -44,9 +61,8 @@ if __name__ == "__main__":
     # app is served by Uvicorn so it can keep the FastAPI routes available too.
     try:
         from spaces.zero import startup as zero_gpu_startup
-    except ImportError:
-        pass
-    else:
         zero_gpu_startup()
+    except Exception as exc:
+        print(f"ZeroGPU startup note: {exc}")
 
     uvicorn.run(app, host="0.0.0.0", port=7860)
