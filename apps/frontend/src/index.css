@@ -30,6 +30,13 @@ body {
   overflow-x: hidden;
 }
 
+#root {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+}
+
 /* Custom text-stroke effect for TomatKU header */
 .text-stroke-title {
   -webkit-text-stroke: 3.5px #ffffff;
@@ -81,4 +88,267 @@ body {
 
 .animate-fade {
   animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Compact Home and Camera content when viewport height is limited. */
+@media (max-height: 720px) {
+  .home-page-header {
+    padding-top: 2.5rem;
+  }
+
+  .home-condition-card {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .home-condition-copy {
+    margin-bottom: 0.5rem;
+  }
+
+  .home-condition-description {
+    font-size: 0.75rem;
+    line-height: 1.35;
+  }
+
+  .home-condition-image {
+    width: min(100%, 220px);
+    max-width: 220px;
+    max-height: 220px;
+  }
+
+  .home-condition-dots {
+    margin-top: 0.5rem;
+  }
+
+  .camera-page-header {
+    padding-top: 0.75rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .camera-live-frame {
+    aspect-ratio: 1 / 1;
+    max-height: 320px;
+  }
+
+  .camera-capture-controls,
+  .camera-realtime-controls {
+    margin-top: 0.5rem;
+  }
+
+  .camera-capture-panel {
+    padding: 0.75rem;
+  }
+
+  .camera-captured-image {
+    aspect-ratio: 16 / 10;
+    max-height: 220px;
+  }
+}
+
+@media (max-height: 600px) and (orientation: portrait) {
+  .home-page-header {
+    padding-top: 1rem;
+  }
+
+  .home-page-header h1 {
+    font-size: clamp(1.125rem, 5vw, 1.25rem);
+    line-height: 1;
+  }
+
+  .home-condition-card {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .home-condition-copy {
+    margin-bottom: 0.25rem;
+  }
+
+  .home-condition-heading {
+    position: relative;
+  }
+
+  .home-condition-heading > button {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+  }
+
+  .home-condition-heading > button:first-child {
+    left: 0;
+  }
+
+  .home-condition-heading > button:last-child {
+    right: 0;
+  }
+
+  .home-condition-heading > div {
+    width: 100%;
+    padding: 0 2rem;
+  }
+
+  .home-condition-description {
+    font-size: 0.6875rem;
+    line-height: 1.15;
+  }
+
+  .home-condition-image {
+    width: min(100%, clamp(150px, 30vh, 185px));
+    max-width: 185px;
+    max-height: 185px;
+  }
+
+  .home-condition-dots {
+    margin-top: 0.25rem;
+  }
+}
+
+/* Landscape phones use the viewport edge to edge; camera controls sit beside the preview. */
+@media (orientation: landscape) and (max-height: 560px) and (pointer: coarse) {
+  .home-page-shell,
+  .camera-page-shell {
+    padding: 0;
+  }
+
+  .home-page-frame,
+  .camera-page-frame {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .home-page-header {
+    padding-top: 0.375rem;
+    padding-bottom: 0;
+  }
+
+  .home-page-header h1 {
+    font-size: clamp(1rem, 2.7vw, 1.375rem);
+    line-height: 1.05;
+  }
+
+  .home-condition-card {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0.25rem 1rem 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .home-condition-copy {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .home-condition-description {
+    max-width: none;
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .home-condition-image {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    max-width: none;
+    max-height: 230px;
+    aspect-ratio: 4 / 3;
+  }
+
+  .home-condition-dots {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0;
+  }
+
+  .camera-scroll-area {
+    justify-content: flex-start;
+  }
+
+  .camera-page-header {
+    padding-top: 0.375rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .camera-page-header h1 {
+    font-size: clamp(1rem, 3vw, 1.375rem);
+    line-height: 1.05;
+  }
+
+  .camera-page-content {
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+
+  .camera-live-panel {
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, min(32vw, 280px));
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .camera-live-frame {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 100%;
+    height: min(250px, calc(100dvh - 140px));
+    max-height: 250px;
+    min-height: 150px;
+    aspect-ratio: auto;
+  }
+
+  .camera-capture-controls {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    margin: 0;
+    padding: 0 0.75rem;
+  }
+
+  .camera-realtime-controls {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .camera-capture-panel {
+    width: 100%;
+    max-width: 760px;
+    flex-direction: row;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .camera-captured-image {
+    width: 56%;
+    max-height: calc(100dvh - 100px);
+    aspect-ratio: 16 / 10;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .camera-capture-panel > .w-full.flex.flex-col {
+    min-width: 0;
+    flex: 1;
+  }
 }
