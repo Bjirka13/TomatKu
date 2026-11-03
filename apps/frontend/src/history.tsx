@@ -20,6 +20,8 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
     dateStr: '',
     fullDateStr: '',
     totalScan: 0,
+    healthyCount: 0,
+    earlyBlightCount: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
     // unknownPercent: 0,
@@ -410,6 +412,9 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                   Blight
                 </span>
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
+                  {currentRecord.earlyBlightCount} scan
+                </span>
+                <span className="block text-[10px] font-medium text-[#6b7280]">
                   {currentRecord.earlyBlightPercent}%
                 </span>
               </div>
@@ -471,6 +476,9 @@ export default function History({ onNavigate, activeTab = 'summary' }: HistoryPr
                   Healthy
                 </span>
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
+                  {currentRecord.healthyCount} scan
+                </span>
+                <span className="block text-[10px] font-medium text-[#6b7280]">
                   {currentRecord.healthyPercent}%
                 </span>
               </div>
