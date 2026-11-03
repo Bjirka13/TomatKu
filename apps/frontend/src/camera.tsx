@@ -401,10 +401,10 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
   };
 
   return (
-    <div className="w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 sm:p-4">
-      <main className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col sm:rounded-[36px] sm:shadow-2xl relative overflow-hidden">
+    <div className="camera-page-shell w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4">
+      <main className="camera-page-frame w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col md:rounded-[36px] md:shadow-2xl relative overflow-hidden">
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col justify-between">
+        <div className="camera-scroll-area flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col justify-between">
           {/* Modal Tutorial (Muncul Pertama Kali) */}
           {showTutorial && (
             <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-5 animate-fade">
@@ -519,7 +519,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
         )}
 
         {/* Header Title */}
-        <header className="pt-6 sm:pt-7 px-5 pb-2 text-center flex-shrink-0">
+        <header className="camera-page-header pt-6 sm:pt-7 px-5 pb-2 text-center flex-shrink-0">
           <h1 className="flex flex-col items-center gap-0.5 font-['Poppins'] font-black text-[clamp(21px,5.8vw,28px)] leading-tight tracking-[-0.3px] text-[#eb8e2d] uppercase select-none text-stroke-title">
             <span>DETEKSI KAMERA</span>
             <span>TOMATKU</span>
@@ -527,11 +527,11 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
         </header>
 
         {/* Camera Scanner Viewport Area */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-5 my-auto w-full">
+        <div className="camera-page-content flex-1 min-h-0 flex flex-col items-center justify-center px-4 sm:px-5 my-auto w-full">
           {capturedImage ? (
             /* Mode Preview Foto yang Berhasil Diambil */
-            <div className="w-full max-w-[350px] bg-[#728543] rounded-[28px] p-4 shadow-[0_16px_30px_-4px_rgba(90,115,45,0.38)] flex flex-col items-center animate-fade">
-              <div className="w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-black mb-3 relative shadow-inner">
+            <div className="camera-capture-panel w-full max-w-[350px] bg-[#728543] rounded-[28px] p-4 shadow-[0_16px_30px_-4px_rgba(90,115,45,0.38)] flex flex-col items-center animate-fade">
+              <div className="camera-captured-image w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-black mb-3 relative shadow-inner">
                 <img
                   src={capturedImage}
                   alt="Foto Daun Terdeteksi"
@@ -665,9 +665,9 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
             </div>
           ) : (
             /* Mode Live Camera Viewfinder */
-            <div className="w-full max-w-[360px] flex flex-col items-center">
+            <div className="camera-live-panel w-full max-w-[360px] flex flex-col items-center">
               {/* Box Frame Kamera */}
-              <div className="w-full aspect-[3/4] max-h-[480px] rounded-[28px] overflow-hidden relative shadow-[0_16px_34px_rgba(0,0,0,0.25)] bg-[#1e251a] flex items-center justify-center border-2 border-white/40">
+              <div className="camera-live-frame w-full aspect-[3/4] max-h-[480px] rounded-[28px] overflow-hidden relative shadow-[0_16px_34px_rgba(0,0,0,0.25)] bg-[#1e251a] flex items-center justify-center border-2 border-white/40">
                 {hasAgreedPermission ? (
                   <Webcam
                     audio={false}
@@ -797,7 +797,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
               {/* </div> */}
 
               {/* Shutter & Controls Bar */}
-              <div className="w-full flex items-center justify-between px-6 mt-2.5 sm:mt-3">
+              <div className="camera-capture-controls w-full flex items-center justify-between px-6 mt-2.5 sm:mt-3">
                 {/* Tombol Upload File */}
                 <button
                   type="button"
@@ -842,7 +842,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
                 </button>
               </div>
 
-              <div className="w-full max-w-[350px] mt-4 text-center">
+              <div className="camera-realtime-controls w-full max-w-[350px] mt-4 text-center">
                 <button
                   type="button"
                   onClick={
@@ -887,7 +887,7 @@ export default function Camera({ onNavigate, activeTab = 'camera', previousPage 
 
         {/* Fixed Bottom Navigation Bar */}
         <nav
-          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-5 max-sm:pb-[calc(16px+env(safe-area-inset-bottom,0px))] flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
+          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:pb-5 flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
           aria-label="Navigasi Utama"
         >
           <button
