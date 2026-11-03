@@ -37,12 +37,12 @@ export default function Landing({
 
   return (
     <div
-      className={`w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] sm:p-4 transition-all duration-500 ease-out ${
+      className={`w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4 transition-all duration-500 ease-out ${
         isExiting ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
       }`}
     >
       <main
-        className="w-full sm:max-w-[430px] min-h-[100dvh] sm:min-h-0 sm:h-[min(100dvh-2rem,880px)] bg-white flex flex-col justify-center items-center relative cursor-pointer select-none overflow-hidden p-6 sm:rounded-[36px] sm:shadow-2xl"
+        className="w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] bg-white flex flex-col justify-center items-center relative cursor-pointer select-none overflow-hidden p-6 md:rounded-[36px] md:shadow-2xl"
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
