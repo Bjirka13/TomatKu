@@ -35,11 +35,11 @@ export async function fetchScanHistory(): Promise<ScanRecord[]> {
   }
 }
 
-export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyPercent: number, earlyBlightPercent: number, severityCounts: { ringan: number, sedang: number, parah: number }, needleAngle: number } {
+export function calculateStats(records: ScanRecord[]): { totalScan: number, healthyCount: number, earlyBlightCount: number, healthyPercent: number, earlyBlightPercent: number, severityCounts: { ringan: number, sedang: number, parah: number }, needleAngle: number } {
   const validRecords = records.filter(record => hasValidClassification(record.classification));
   const totalScan = validRecords.length;
   if (totalScan === 0) {
-    return { totalScan: 0, healthyPercent: 0, earlyBlightPercent: 0, severityCounts: { ringan: 0, sedang: 0, parah: 0 }, needleAngle: 0 };
+    return { totalScan: 0, healthyCount: 0, earlyBlightCount: 0, healthyPercent: 0, earlyBlightPercent: 0, severityCounts: { ringan: 0, sedang: 0, parah: 0 }, needleAngle: 0 };
   }
   
   let healthyCount = 0;
@@ -68,6 +68,8 @@ export function calculateStats(records: ScanRecord[]): { totalScan: number, heal
 
   return {
     totalScan,
+    healthyCount,
+    earlyBlightCount,
     healthyPercent,
     earlyBlightPercent,
     severityCounts: { ringan: ringanCount, sedang: sedangCount, parah: parahCount },
