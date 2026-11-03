@@ -19,8 +19,8 @@ export default function PageOne({ onContinue }: PageOneProps) {
   };
 
   return (
-    <div className={`w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 sm:p-4 transition-all duration-300 ease-out ${ isExiting ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100' }`}>
-      <main className="w-full sm:max-w-[430px] min-h-[100dvh] sm:min-h-0 sm:h-[min(100dvh-2rem,880px)] relative overflow-hidden sm:rounded-[36px] sm:shadow-2xl flex items-center justify-center p-5 select-none">
+    <div className={`w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4 transition-all duration-300 ease-out ${ isExiting ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100' }`}>
+      <main className="w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] relative overflow-hidden md:rounded-[36px] md:shadow-2xl flex items-center justify-center p-5 select-none">
         {/* Blurred Foliage Background */}
         <div className="absolute inset-0 z-0">
           <img
