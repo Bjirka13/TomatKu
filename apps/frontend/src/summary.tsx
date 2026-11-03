@@ -70,6 +70,8 @@ export default function Summary({
   }, [previousPage]);
   const [currentStats, setCurrentStats] = useState({
     totalScan: 0,
+    healthyCount: 0,
+    earlyBlightCount: 0,
     healthyPercent: 0,
     earlyBlightPercent: 0,
     // unknownPercent: 0,
@@ -397,6 +399,9 @@ export default function Summary({
                   Blight
                 </span>
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
+                  {currentStats.earlyBlightCount} scan
+                </span>
+                <span className="block text-[10px] font-medium text-[#6b7280]">
                   {currentStats.earlyBlightPercent}%
                 </span>
               </div>
@@ -458,6 +463,9 @@ export default function Summary({
                   Healthy
                 </span>
                 <span className="block text-[10.5px] font-semibold text-[#4b5563] mt-0.5">
+                  {currentStats.healthyCount} scan
+                </span>
+                <span className="block text-[10px] font-medium text-[#6b7280]">
                   {currentStats.healthyPercent}%
                 </span>
               </div>
