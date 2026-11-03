@@ -84,12 +84,12 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
   const currentCondition = conditions[currentIndex];
 
   return (
-    <div className="w-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 sm:p-4">
-      <main className="w-full sm:max-w-[430px] h-[100dvh] sm:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col sm:rounded-[36px] sm:shadow-2xl relative overflow-hidden">
+    <div className="home-page-shell w-full h-full min-h-[100dvh] flex justify-center items-center bg-[#ede6d9] p-0 md:p-4">
+      <main className="home-page-frame w-full md:max-w-[430px] h-[100dvh] md:h-[min(100dvh-2rem,880px)] bg-gradient-to-b from-[#f9deb7] via-[#fdf5ea] to-[#fffdfa] flex flex-col md:rounded-[36px] md:shadow-2xl relative overflow-hidden">
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
+        <div className="home-scroll-area flex-1 min-h-0 overflow-y-auto overflow-x-hidden flex flex-col">
           {/* Header Title */}
-          <header className="pt-20 sm:pt-16 pb-1 text-center flex-shrink-0">
+          <header className="home-page-header pt-20 sm:pt-16 pb-1 text-center flex-shrink-0">
           <h1 className="flex flex-col items-center gap-0.5 font-['Poppins'] font-black text-[clamp(21px,5.8vw,28px)] leading-tight tracking-[-0.3px] text-[#eb8e2d] uppercase select-none text-stroke-title">
             <span>KENALI KONDISI</span>
             <span>DAUN TOMATMU</span>
@@ -98,15 +98,15 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
 
         {/* Main Card */}
         <section
-          className="mx-4 sm:mx-[18px] mt-4 sm:mt-5 mb-6 bg-[#728543] rounded-[28px] p-4 sm:p-[20px_14px_14px_14px] shadow-[0_16px_30px_-4px_rgba(90,115,45,0.38),0_8px_14px_-3px_rgba(0,0,0,0.1)] flex flex-col relative select-none touch-pan-y flex-shrink-0"
+          className="home-condition-card mx-4 sm:mx-[18px] mt-4 sm:mt-5 mb-6 bg-[#728543] rounded-[28px] p-4 sm:p-[20px_14px_14px_14px] shadow-[0_16px_30px_-4px_rgba(90,115,45,0.38),0_8px_14px_-3px_rgba(0,0,0,0.1)] flex flex-col relative select-none touch-pan-y flex-shrink-0"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           aria-roledescription="carousel"
           aria-label="Kondisi Daun Tomat"
         >
           {/* Card Top Text & Navigation */}
-          <div className="flex flex-col mb-3 sm:mb-4">
-            <div className="flex items-center justify-between gap-2">
+          <div className="home-condition-copy flex flex-col mb-3 sm:mb-4">
+            <div className="home-condition-heading flex items-center justify-between gap-2">
               <button
                 type="button"
                 className="w-9 h-9 flex items-center justify-center rounded-full text-[#adc278] hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer flex-shrink-0"
@@ -136,7 +136,7 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
                   {currentCondition.title}
                 </h2>
                 <p
-                  className={`text-[11.5px] text-justify sm:text-[12.2px] font-medium leading-relaxed text-[#edf2d8] mx-auto max-w-[270px] ${
+                  className={`home-condition-description text-[11.5px] text-justify sm:text-[12.2px] font-medium leading-relaxed text-[#edf2d8] mx-auto max-w-[270px] ${
                     animDirection ? 'animate-fade' : ''
                   }`}
                   key={currentCondition.id + '-desc'}
@@ -167,7 +167,7 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
           </div>
 
           {/* Leaf Photo */}
-          <div className="w-full max-h-[360px] sm:max-h-[300px] aspect-square rounded-[20px] overflow-hidden bg-[#5d6f35] relative shadow-[inset_0_2px_8px_rgba(0,0,0,0.15)] mx-auto">
+          <div className="home-condition-image w-full max-h-[360px] sm:max-h-[300px] aspect-square rounded-[20px] overflow-hidden bg-[#5d6f35] relative shadow-[inset_0_2px_8px_rgba(0,0,0,0.15)] mx-auto">
             <img
               src={currentCondition.image}
               alt={currentCondition.title}
@@ -180,7 +180,7 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
           </div>
 
           {/* Indicator dots */}
-          <div className="flex justify-center items-center gap-1.5 mt-3 sm:mt-3.5">
+          <div className="home-condition-dots flex justify-center items-center gap-1.5 mt-3 sm:mt-3.5">
             {conditions.map((item, idx) => (
               <button
                 key={item.id}
@@ -201,7 +201,7 @@ export default function Home({ onNavigate, activeTab = 'home' }: HomeProps) {
 
         {/* Fixed Bottom Navigation Bar */}
         <nav
-          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-5 max-sm:pb-[calc(16px+env(safe-area-inset-bottom,0px))] flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
+          className="bg-[#34363a] rounded-t-[28px] pt-4 px-6 pb-[calc(16px+env(safe-area-inset-bottom,0px))] md:pb-5 flex justify-around items-center shadow-[0_-4px_18px_rgba(0,0,0,0.18)] flex-shrink-0 w-full z-30"
           aria-label="Navigasi Utama"
         >
           <button
