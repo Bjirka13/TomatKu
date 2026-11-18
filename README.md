@@ -80,7 +80,7 @@ Contoh bentuk respons: `{"status":"success","data":{"prediction":{...}}}`. Lihat
 | Layer | Tech |
 |---|---|
 | Frontend | React, TypeScript, Vite, Tailwind CSS |
-| Backend | Python, FastAPI, Uvicorn |
+| Backend | Python, FastAPI, Uvicorn, HuggingFace |
 | Model | Ultralytics YOLO, PyTorch |
 | Data | PostgreSQL, Supabase Storage |
 | Realtime | WebSocket |
